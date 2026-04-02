@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import * as p from "@clack/prompts";
-import { injectPrismaModels } from "../generators/prisma.js";
+import { syncPrismaModels } from "../generators/prisma.js";
 import { generateRoute } from "../generators/route.js";
 
 export async function initCommand(): Promise<void> {
@@ -15,25 +15,36 @@ export async function initCommand(): Promise<void> {
   if (schemaPath) {
     p.log.info(`Schema Prisma trouvé : ${schemaPath}`);
 
-    const shouldInject = await p.confirm({
-      message: "Ajouter les modèles Siteping au schema Prisma ?",
+    const shouldSync = await p.confirm({
+      message: "Synchroniser les modèles Siteping dans le schema Prisma ?",
     });
 
-    if (p.isCancel(shouldInject)) {
+    if (p.isCancel(shouldSync)) {
       p.cancel("Annulé.");
       process.exit(0);
     }
 
-    if (shouldInject) {
+    if (shouldSync) {
       try {
-        const { added } = injectPrismaModels(schemaPath);
-        if (added.length > 0) {
-          p.log.success(`Modèles ajoutés : ${added.join(", ")}`);
-        } else {
-          p.log.info("Les modèles Siteping existent déjà dans le schema.");
+        const { addedModels, changes } = syncPrismaModels(schemaPath);
+
+        if (addedModels.length > 0) {
+          p.log.success(`Modèles créés : ${addedModels.join(", ")}`);
+        }
+
+        for (const change of changes) {
+          if (change.action === "added") {
+            p.log.success(`${change.model}.${change.field} — ajouté (${change.detail})`);
+          } else {
+            p.log.success(`${change.model}.${change.field} — mis à jour (${change.detail})`);
+          }
+        }
+
+        if (addedModels.length === 0 && changes.length === 0) {
+          p.log.info("Le schema est déjà à jour.");
         }
       } catch (error) {
-        p.log.error(`Erreur lors de l'injection : ${error instanceof Error ? error.message : String(error)}`);
+        p.log.error(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   } else {

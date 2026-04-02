@@ -5,15 +5,29 @@ import { type FieldDef, SITEPING_MODELS } from "../../adapter-prisma/schema.js";
 
 const DEFAULT_SCHEMA_PATH = "prisma/schema.prisma";
 
+export interface FieldChange {
+  model: string;
+  field: string;
+  action: "added" | "updated";
+  detail: string;
+}
+
+export interface SyncResult {
+  schemaPath: string;
+  addedModels: string[];
+  changes: FieldChange[];
+}
+
 /**
- * Inject Siteping models into an existing Prisma schema.
+ * Sync Siteping models into an existing Prisma schema.
  *
  * Uses prisma-ast for AST-level manipulation (no regex/string concat).
- * Idempotent: skips models that already exist.
- *
- * @returns List of added model names (empty if nothing was added)
+ * - Missing models are created
+ * - Missing fields are added
+ * - Fields with wrong type/optional/attributes are updated
+ * - User-added fields outside Siteping's definition are left untouched
  */
-export function injectPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): { added: string[]; schemaPath: string } {
+export function syncPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): SyncResult {
   if (!existsSync(schemaPath)) {
     throw new Error(`Schema file not found: ${schemaPath}`);
   }
@@ -21,34 +35,130 @@ export function injectPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): { 
   const source = readFileSync(schemaPath, "utf-8");
   const schema = getSchema(source);
 
-  const existingModels = new Set(schema.list.filter((item): item is Model => item.type === "model").map((m) => m.name));
-
-  const added: string[] = [];
-
-  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
-    if (existingModels.has(modelName)) continue;
-
-    const model: Model = {
-      type: "model",
-      name: modelName,
-      properties: [],
-    };
-
-    for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
-      const field = buildField(fieldName, fieldDef);
-      model.properties.push(field);
+  const existingModelsMap = new Map<string, Model>();
+  for (const item of schema.list) {
+    if (item.type === "model") {
+      existingModelsMap.set(item.name, item as Model);
     }
-
-    schema.list.push(model);
-    added.push(modelName);
   }
 
-  if (added.length > 0) {
+  const addedModels: string[] = [];
+  const changes: FieldChange[] = [];
+
+  for (const [modelName, modelDef] of Object.entries(SITEPING_MODELS)) {
+    const existingModel = existingModelsMap.get(modelName);
+
+    if (!existingModel) {
+      const model: Model = { type: "model", name: modelName, properties: [] };
+      for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
+        model.properties.push(buildField(fieldName, fieldDef));
+      }
+      schema.list.push(model);
+      addedModels.push(modelName);
+      continue;
+    }
+
+    // Model exists — diff fields
+    const existingFields = new Map<string, { field: Field; index: number }>();
+    existingModel.properties.forEach((prop, idx) => {
+      if (prop.type === "field") {
+        existingFields.set((prop as Field).name, { field: prop as Field, index: idx });
+      }
+    });
+
+    const fieldsToAdd: Field[] = [];
+    const fieldsToUpdate: Array<{ index: number; field: Field }> = [];
+
+    for (const [fieldName, fieldDef] of Object.entries(modelDef.fields)) {
+      const expected = buildField(fieldName, fieldDef);
+      const existing = existingFields.get(fieldName);
+
+      if (!existing) {
+        fieldsToAdd.push(expected);
+        changes.push({
+          model: modelName,
+          field: fieldName,
+          action: "added",
+          detail: formatFieldSignature(fieldDef),
+        });
+      } else if (!fieldsMatch(existing.field, expected)) {
+        fieldsToUpdate.push({ index: existing.index, field: expected });
+        changes.push({
+          model: modelName,
+          field: fieldName,
+          action: "updated",
+          detail: describeChange(existing.field, expected),
+        });
+      }
+    }
+
+    // Apply updates in-place (doesn't shift indices)
+    for (const { index, field } of fieldsToUpdate) {
+      existingModel.properties[index] = field;
+    }
+
+    // Insert new fields before createdAt (or at end)
+    if (fieldsToAdd.length > 0) {
+      const createdAtIdx = existingModel.properties.findIndex(
+        (p) => p.type === "field" && (p as Field).name === "createdAt",
+      );
+      if (createdAtIdx >= 0) {
+        existingModel.properties.splice(createdAtIdx, 0, ...fieldsToAdd);
+      } else {
+        existingModel.properties.push(...fieldsToAdd);
+      }
+    }
+  }
+
+  if (addedModels.length > 0 || changes.length > 0) {
     const output = printSchema(schema);
     writeFileSync(schemaPath, output, "utf-8");
   }
 
-  return { added, schemaPath };
+  return { schemaPath, addedModels, changes };
+}
+
+/** Check if two fields have the same type, optionality, and attributes. */
+function fieldsMatch(existing: Field, expected: Field): boolean {
+  if (existing.fieldType !== expected.fieldType) return false;
+  if ((existing.optional ?? false) !== (expected.optional ?? false)) return false;
+  if ((existing.array ?? false) !== (expected.array ?? false)) return false;
+
+  const existingAttrs = (existing.attributes ?? []).map((a) => a.name).sort();
+  const expectedAttrs = (expected.attributes ?? []).map((a) => a.name).sort();
+
+  if (existingAttrs.length !== expectedAttrs.length) return false;
+  return existingAttrs.every((name, i) => name === expectedAttrs[i]);
+}
+
+/** Human-readable description of what changed. */
+function describeChange(existing: Field, expected: Field): string {
+  const parts: string[] = [];
+
+  if (existing.fieldType !== expected.fieldType) {
+    parts.push(`${existing.fieldType} → ${expected.fieldType}`);
+  }
+  if ((existing.optional ?? false) !== (expected.optional ?? false)) {
+    parts.push(expected.optional ? "required → optional" : "optional → required");
+  }
+
+  const existingAttrs = new Set((existing.attributes ?? []).map((a) => a.name));
+  const expectedAttrs = new Set((expected.attributes ?? []).map((a) => a.name));
+  for (const attr of expectedAttrs) {
+    if (!existingAttrs.has(attr)) parts.push(`+@${attr}`);
+  }
+  for (const attr of existingAttrs) {
+    if (!expectedAttrs.has(attr)) parts.push(`-@${attr}`);
+  }
+
+  return parts.join(", ") || "attributes changed";
+}
+
+/** Format a field definition for display. */
+function formatFieldSignature(def: FieldDef): string {
+  let sig = def.type;
+  if (def.optional) sig += "?";
+  return sig;
 }
 
 function buildField(name: string, def: FieldDef): Field {
