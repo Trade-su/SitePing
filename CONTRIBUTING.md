@@ -55,6 +55,34 @@ Each is built independently via tsup.
 - **E2E tests** — Playwright. Place in the `tests/` or `e2e/` directory.
 - Cover new features with unit tests. Cover user-facing flows with E2E tests when relevant.
 
+## Releases & Versioning
+
+Releases are **fully automated** via [Release Please](https://github.com/googleapis/release-please). You never need to manually bump versions, write changelogs, or create tags.
+
+**How it works:**
+
+1. Write code using [Conventional Commits](https://www.conventionalcommits.org/)
+2. Push to `main` (via squash-merged PR)
+3. Release Please opens a release PR with version bump + CHANGELOG
+4. Merge the release PR → GitHub Release + npm publish happen automatically
+
+**Version bumps are determined by your commit messages:**
+
+| Commit prefix | Version bump | Example |
+|--------------|-------------|---------|
+| `fix(scope):` | Patch (0.2.2 → 0.2.3) | `fix(widget): prevent double submit` |
+| `feat(scope):` | Minor (0.2.2 → 0.3.0) | `feat(panel): add dark mode` |
+| `feat(scope)!:` | Major (0.3.0 → 1.0.0) | `feat(api)!: redesign payload format` |
+| `chore:` / `docs:` / `test:` | No release | Included in next changelog |
+
+> While the version is < 1.0.0, breaking changes bump minor instead of major.
+
+**What you don't need to do:**
+- Edit `package.json` version — Release Please does it
+- Write `CHANGELOG.md` — auto-generated from commits
+- Create git tags — auto-created on release
+- Run `npm publish` — CI handles it
+
 ## Pull Request Guidelines
 
 1. **One feature or fix per PR.** Keep changes focused and reviewable.
