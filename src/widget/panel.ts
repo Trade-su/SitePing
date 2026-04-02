@@ -1,4 +1,4 @@
-import { getTypeColor, getTypeBgColor, type ThemeColors } from "../styles/theme.js";
+import { getTypeBgColor, getTypeColor, type ThemeColors } from "../styles/theme.js";
 import type { FeedbackResponse, FeedbackType } from "../types.js";
 import type { ApiClient } from "./api-client.js";
 import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
@@ -28,7 +28,6 @@ export class Panel {
   private feedbacks: FeedbackResponse[] = [];
   private isOpen = false;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
-  private isLoading = false;
 
   constructor(
     shadowRoot: ShadowRoot,
@@ -141,7 +140,6 @@ export class Panel {
   }
 
   private showLoading(): void {
-    this.isLoading = true;
     this.listContainer.replaceChildren();
     const loading = el("div", { class: "sp-loading" });
     const spinner = el("div", { class: "sp-spinner" });
@@ -162,11 +160,9 @@ export class Panel {
     try {
       const { feedbacks } = await this.apiClient.getFeedbacks(this.projectName, options);
       this.feedbacks = feedbacks;
-      this.isLoading = false;
       this.renderList();
       this.markers.render(feedbacks);
     } catch (error) {
-      this.isLoading = false;
       this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
     }
   }

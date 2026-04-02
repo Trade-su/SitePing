@@ -1,4 +1,4 @@
-import { getTypeColor, getTypeBgColor, type ThemeColors } from "../styles/theme.js";
+import { getTypeBgColor, getTypeColor, type ThemeColors } from "../styles/theme.js";
 import type { FeedbackType } from "../types.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import { ICON_BUG, ICON_CHANGE, ICON_OTHER, ICON_QUESTION } from "./icons.js";

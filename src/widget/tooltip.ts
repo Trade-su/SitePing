@@ -1,4 +1,4 @@
-import { getTypeColor, getTypeBgColor, type ThemeColors } from "../styles/theme.js";
+import { getTypeBgColor, getTypeColor, type ThemeColors } from "../styles/theme.js";
 import type { FeedbackResponse } from "../types.js";
 import { el, formatRelativeDate, setText } from "./dom-utils.js";
 
@@ -169,10 +169,7 @@ export class Tooltip {
     this.root.style.left = `${left}px`;
 
     // Position arrow
-    const arrowLeft = Math.max(16, Math.min(
-      anchorRect.left + anchorRect.width / 2 - left - 6,
-      tooltipRect.width - 22,
-    ));
+    const arrowLeft = Math.max(16, Math.min(anchorRect.left + anchorRect.width / 2 - left - 6, tooltipRect.width - 22));
 
     if (isAbove) {
       // Arrow at bottom, pointing down

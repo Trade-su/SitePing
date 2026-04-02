@@ -191,7 +191,10 @@ function promptIdentity(shadowRoot: ShadowRoot): Promise<Identity | null> {
     cancelBtn.addEventListener("click", () => {
       backdrop.style.opacity = "0";
       modal.style.transform = "translateY(12px) scale(0.97)";
-      setTimeout(() => { backdrop.remove(); resolve(null); }, 250);
+      setTimeout(() => {
+        backdrop.remove();
+        resolve(null);
+      }, 250);
     });
 
     const submitBtn = document.createElement("button");
@@ -203,7 +206,10 @@ function promptIdentity(shadowRoot: ShadowRoot): Promise<Identity | null> {
       if (!name || !email) return;
       backdrop.style.opacity = "0";
       modal.style.transform = "translateY(12px) scale(0.97)";
-      setTimeout(() => { backdrop.remove(); resolve({ name, email }); }, 250);
+      setTimeout(() => {
+        backdrop.remove();
+        resolve({ name, email });
+      }, 250);
     });
 
     btnRow.appendChild(cancelBtn);
