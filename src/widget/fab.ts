@@ -1,14 +1,7 @@
 import type { SitepingConfig } from "../types.js";
-import {
-  ICON_ANNOTATE,
-  ICON_CHAT,
-  ICON_CLOSE,
-  ICON_EYE,
-  ICON_EYE_OFF,
-  ICON_SITEPING,
-} from "./icons.js";
 import { parseSvg } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
+import { ICON_ANNOTATE, ICON_CHAT, ICON_CLOSE, ICON_EYE, ICON_EYE_OFF, ICON_SITEPING } from "./icons.js";
 
 interface RadialItem {
   id: string;
@@ -35,7 +28,7 @@ export class Fab {
 
   constructor(
     shadowRoot: ShadowRoot,
-    private readonly config: SitepingConfig,
+    config: SitepingConfig,
     private readonly bus: EventBus<WidgetEvents>,
   ) {
     const position = config.position ?? "bottom-right";

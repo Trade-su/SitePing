@@ -1,11 +1,7 @@
-import {
-  feedbackCreateSchema,
-  feedbackPatchSchema,
-  formatValidationErrors,
-} from "./validation.js";
+import { feedbackCreateSchema, feedbackPatchSchema, formatValidationErrors } from "./validation.js";
 
-export type { FeedbackCreateInput, FeedbackPatchInput } from "./validation.js";
 export { SITEPING_MODELS } from "./schema.js";
+export type { FeedbackCreateInput, FeedbackPatchInput } from "./validation.js";
 
 interface PrismaClient {
   sitepingFeedback: {
@@ -44,10 +40,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
 
       const parsed = feedbackCreateSchema.safeParse(body);
       if (!parsed.success) {
-        return Response.json(
-          { errors: formatValidationErrors(parsed.error) },
-          { status: 400 },
-        );
+        return Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 });
       }
 
       const data = parsed.data;
@@ -103,10 +96,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
         }
 
         console.error("[siteping] Failed to create feedback:", error);
-        return Response.json(
-          { error: "Internal server error" },
-          { status: 500 },
-        );
+        return Response.json({ error: "Internal server error" }, { status: 500 });
       }
     },
 
@@ -115,10 +105,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
       const projectName = url.searchParams.get("projectName");
 
       if (!projectName) {
-        return Response.json(
-          { error: "projectName is required" },
-          { status: 400 },
-        );
+        return Response.json({ error: "projectName is required" }, { status: 400 });
       }
 
       const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
@@ -149,10 +136,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
         return Response.json({ feedbacks, total });
       } catch (error) {
         console.error("[siteping] Failed to fetch feedbacks:", error);
-        return Response.json(
-          { error: "Internal server error" },
-          { status: 500 },
-        );
+        return Response.json({ error: "Internal server error" }, { status: 500 });
       }
     },
 
@@ -164,10 +148,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
 
       const parsed = feedbackPatchSchema.safeParse(body);
       if (!parsed.success) {
-        return Response.json(
-          { errors: formatValidationErrors(parsed.error) },
-          { status: 400 },
-        );
+        return Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 });
       }
 
       try {
@@ -175,8 +156,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
           where: { id: parsed.data.id },
           data: {
             status: parsed.data.status,
-            resolvedAt:
-              parsed.data.status === "resolved" ? new Date() : null,
+            resolvedAt: parsed.data.status === "resolved" ? new Date() : null,
           },
           include: INCLUDE_ANNOTATIONS,
         });
@@ -184,20 +164,12 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
         return Response.json(feedback);
       } catch (error) {
         console.error("[siteping] Failed to update feedback:", error);
-        return Response.json(
-          { error: "Internal server error" },
-          { status: 500 },
-        );
+        return Response.json({ error: "Internal server error" }, { status: 500 });
       }
     },
   };
 }
 
 function isDuplicateError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code: string }).code === "P2002"
-  );
+  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "P2002";
 }

@@ -1,6 +1,6 @@
-import type { FeedbackResponse } from "../types.js";
 import { getTypeColor, type ThemeColors } from "../styles/theme.js";
-import { el, setText, formatRelativeDate } from "./dom-utils.js";
+import type { FeedbackResponse } from "../types.js";
+import { el, formatRelativeDate, setText } from "./dom-utils.js";
 
 const SHOW_DELAY = 150;
 const HIDE_DELAY = 100;
@@ -75,11 +75,17 @@ export class Tooltip {
   }
 
   private cancelShow(): void {
-    if (this.showTimer) { clearTimeout(this.showTimer); this.showTimer = null; }
+    if (this.showTimer) {
+      clearTimeout(this.showTimer);
+      this.showTimer = null;
+    }
   }
 
   private cancelHide(): void {
-    if (this.hideTimer) { clearTimeout(this.hideTimer); this.hideTimer = null; }
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
   }
 
   private render(feedback: FeedbackResponse): void {
@@ -105,7 +111,8 @@ export class Tooltip {
 
     // Message body (safe — textContent only)
     const body = el("div", {
-      style: "font-size:13px;line-height:1.4;color:#1a1a1a;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;",
+      style:
+        "font-size:13px;line-height:1.4;color:#1a1a1a;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;",
     });
     setText(body, feedback.message);
 
@@ -133,4 +140,3 @@ export class Tooltip {
     this.root.remove();
   }
 }
-

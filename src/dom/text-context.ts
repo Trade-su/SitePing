@@ -7,12 +7,8 @@
  * Extract ~32 chars of text from the nearest sibling with content.
  * Walks up to 3 siblings in the given direction.
  */
-export function adjacentText(
-  element: Element,
-  direction: "before" | "after",
-): string {
-  const prop =
-    direction === "before" ? "previousElementSibling" : "nextElementSibling";
+export function adjacentText(element: Element, direction: "before" | "after"): string {
+  const prop = direction === "before" ? "previousElementSibling" : "nextElementSibling";
   let sibling: Element | null = element[prop];
   let attempts = 3;
 
@@ -30,9 +26,7 @@ export function adjacentText(
 
 /** Collect text from immediate siblings for disambiguation context. */
 export function neighborText(element: Element): string {
-  const prev =
-    element.previousElementSibling?.textContent?.trim().slice(0, 40) ?? "";
-  const next =
-    element.nextElementSibling?.textContent?.trim().slice(0, 40) ?? "";
+  const prev = element.previousElementSibling?.textContent?.trim().slice(0, 40) ?? "";
+  const next = element.nextElementSibling?.textContent?.trim().slice(0, 40) ?? "";
   return [prev, next].filter(Boolean).join(" | ");
 }

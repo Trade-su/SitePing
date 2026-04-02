@@ -1,7 +1,7 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import type { AttributeArgument, Field, Model } from "@mrleebo/prisma-ast";
 import { getSchema, printSchema } from "@mrleebo/prisma-ast";
-import type { Model, Field, AttributeArgument } from "@mrleebo/prisma-ast";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { SITEPING_MODELS, type FieldDef } from "../../adapter-prisma/schema.js";
+import { type FieldDef, SITEPING_MODELS } from "../../adapter-prisma/schema.js";
 
 const DEFAULT_SCHEMA_PATH = "prisma/schema.prisma";
 
@@ -13,9 +13,7 @@ const DEFAULT_SCHEMA_PATH = "prisma/schema.prisma";
  *
  * @returns List of added model names (empty if nothing was added)
  */
-export function injectPrismaModels(
-  schemaPath: string = DEFAULT_SCHEMA_PATH,
-): { added: string[]; schemaPath: string } {
+export function injectPrismaModels(schemaPath: string = DEFAULT_SCHEMA_PATH): { added: string[]; schemaPath: string } {
   if (!existsSync(schemaPath)) {
     throw new Error(`Schema file not found: ${schemaPath}`);
   }
@@ -23,11 +21,7 @@ export function injectPrismaModels(
   const source = readFileSync(schemaPath, "utf-8");
   const schema = getSchema(source);
 
-  const existingModels = new Set(
-    schema.list
-      .filter((item): item is Model => item.type === "model")
-      .map((m) => m.name),
-  );
+  const existingModels = new Set(schema.list.filter((item): item is Model => item.type === "model").map((m) => m.name));
 
   const added: string[] = [];
 
@@ -74,7 +68,12 @@ function buildField(name: string, def: FieldDef): Field {
         type: "attribute",
         name: "default",
         kind: "field",
-        args: [{ type: "attributeArgument", value: { type: "function", name: def.default.replace("()", ""), params: [] } } as AttributeArgument],
+        args: [
+          {
+            type: "attributeArgument",
+            value: { type: "function", name: def.default.replace("()", ""), params: [] },
+          } as AttributeArgument,
+        ],
       });
     }
   } else if (def.default && !def.relation) {
@@ -86,9 +85,7 @@ function buildField(name: string, def: FieldDef): Field {
       args: [
         {
           type: "attributeArgument",
-          value: isFunction
-            ? { type: "function", name: def.default.replace("()", ""), params: [] }
-            : def.default,
+          value: isFunction ? { type: "function", name: def.default.replace("()", ""), params: [] } : def.default,
         } as AttributeArgument,
       ],
     });

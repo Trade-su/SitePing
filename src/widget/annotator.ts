@@ -1,9 +1,9 @@
-import type { AnnotationPayload, FeedbackType, SitepingConfig } from "../types.js";
+import { findAnchorElement, generateAnchor, rectToPercentages } from "../dom/anchor.js";
 import type { ThemeColors } from "../styles/theme.js";
-import { generateAnchor, findAnchorElement, rectToPercentages } from "../dom/anchor.js";
+import type { AnnotationPayload, FeedbackType, SitepingConfig } from "../types.js";
 import { el, setText } from "./dom-utils.js";
-import { Popup } from "./popup.js";
 import type { EventBus, WidgetEvents } from "./events.js";
+import { Popup } from "./popup.js";
 
 export interface AnnotationComplete {
   annotation: AnnotationPayload;
@@ -224,11 +224,6 @@ export class Annotator {
       devicePixelRatio: window.devicePixelRatio,
     };
   }
-
-  getPopup(): Popup {
-    return this.popup;
-  }
-
   destroy(): void {
     this.deactivate();
     this.popup.destroy();

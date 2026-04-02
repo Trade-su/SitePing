@@ -28,16 +28,6 @@ export const ANIMATION_CSS = `
     100% { transform: scale(1); }
   }
 
-  @keyframes sp-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes sp-slide-up {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
   @keyframes sp-pulse-outline {
     0% { box-shadow: 0 0 0 0 var(--sp-accent-light); }
     70% { box-shadow: 0 0 0 6px transparent; }
@@ -57,14 +47,6 @@ export const ANIMATION_CSS = `
 
   .sp-anim-marker-in {
     animation: sp-marker-in 0.3s ${SPRING_OVERSHOOT} both;
-  }
-
-  .sp-anim-fade-in {
-    animation: sp-fade-in 0.15s ease-out both;
-  }
-
-  .sp-anim-slide-up {
-    animation: sp-slide-up 0.2s ease-out both;
   }
 
   .sp-anim-pulse {
@@ -105,10 +87,4 @@ export const ANIMATION_CSS = `
     transition-delay: calc(var(--sp-i, 0) * 40ms);
   }
 
-  /* Resolve animation */
-  .sp-card--resolving {
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    max-height: 48px;
-    opacity: 0.6;
-  }
 `;

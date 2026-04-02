@@ -1,14 +1,23 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSitepingHandler } from "../../adapter-prisma/index.js";
 import { validAnnotation, validPayloadNoAnnotations } from "../fixtures.js";
 
 function mockPrisma() {
   return {
     sitepingFeedback: {
-      create: vi.fn().mockResolvedValue({ id: "fb-1", ...validPayloadNoAnnotations, status: "open", createdAt: new Date().toISOString(), resolvedAt: null, annotations: [] }),
+      create: vi.fn().mockResolvedValue({
+        id: "fb-1",
+        ...validPayloadNoAnnotations,
+        status: "open",
+        createdAt: new Date().toISOString(),
+        resolvedAt: null,
+        annotations: [],
+      }),
       findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn().mockResolvedValue(null),
-      update: vi.fn().mockResolvedValue({ id: "fb-1", status: "resolved", resolvedAt: new Date().toISOString(), annotations: [] }),
+      update: vi
+        .fn()
+        .mockResolvedValue({ id: "fb-1", status: "resolved", resolvedAt: new Date().toISOString(), annotations: [] }),
       count: vi.fn().mockResolvedValue(0),
     },
   };

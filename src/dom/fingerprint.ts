@@ -6,16 +6,7 @@
  * Inspired by Similo (academic state-of-the-art, 98.8% accuracy).
  */
 
-const STABLE_ATTRS = [
-  "role",
-  "aria-label",
-  "type",
-  "name",
-  "href",
-  "src",
-  "data-testid",
-  "data-id",
-] as const;
+const STABLE_ATTRS = ["role", "aria-label", "type", "name", "href", "src", "data-testid", "data-id"] as const;
 
 /** Simple 32-bit hash (djb2). */
 function djb2(str: string): string {
@@ -69,10 +60,7 @@ export function generateFingerprint(element: Element): string {
  * - Sibling index match: 0.4 (positional — most discriminating)
  * - Attribute hash match: 0.4 (identity — exact or nothing)
  */
-export function scoreFingerprint(
-  candidate: Element,
-  storedFingerprint: string,
-): number {
+export function scoreFingerprint(candidate: Element, storedFingerprint: string): number {
   const parts = storedFingerprint.split(":");
   if (parts.length !== 3) return 0;
 

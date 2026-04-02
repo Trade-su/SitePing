@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { adjacentText, neighborText } from "../../dom/text-context";
 
 describe("adjacentText", () => {

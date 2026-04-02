@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.request.get("http://localhost:3999/api/reset");
@@ -15,43 +15,31 @@ function shadow(page: ReturnType<typeof test.extend>) {
   return {
     /** Query inside the shadow root */
     async query(selector: string) {
-      return page.evaluate(
-        (sel) => {
-          const host = document.querySelector("siteping-widget");
-          return host?.shadowRoot?.querySelector(sel) !== null;
-        },
-        selector,
-      );
+      return page.evaluate((sel) => {
+        const host = document.querySelector("siteping-widget");
+        return host?.shadowRoot?.querySelector(sel) !== null;
+      }, selector);
     },
     /** Get text content of an element inside shadow root */
     async text(selector: string) {
-      return page.evaluate(
-        (sel) => {
-          const host = document.querySelector("siteping-widget");
-          return host?.shadowRoot?.querySelector(sel)?.textContent ?? null;
-        },
-        selector,
-      );
+      return page.evaluate((sel) => {
+        const host = document.querySelector("siteping-widget");
+        return host?.shadowRoot?.querySelector(sel)?.textContent ?? null;
+      }, selector);
     },
     /** Click an element inside shadow root */
     async click(selector: string) {
-      await page.evaluate(
-        (sel) => {
-          const host = document.querySelector("siteping-widget");
-          (host?.shadowRoot?.querySelector(sel) as HTMLElement)?.click();
-        },
-        selector,
-      );
+      await page.evaluate((sel) => {
+        const host = document.querySelector("siteping-widget");
+        (host?.shadowRoot?.querySelector(sel) as HTMLElement)?.click();
+      }, selector);
     },
     /** Count matching elements */
     async count(selector: string) {
-      return page.evaluate(
-        (sel) => {
-          const host = document.querySelector("siteping-widget");
-          return host?.shadowRoot?.querySelectorAll(sel).length ?? 0;
-        },
-        selector,
-      );
+      return page.evaluate((sel) => {
+        const host = document.querySelector("siteping-widget");
+        return host?.shadowRoot?.querySelectorAll(sel).length ?? 0;
+      }, selector);
     },
     /** Get attribute value */
     async attr(selector: string, attr: string) {
@@ -81,9 +69,7 @@ test.describe("Widget injection", () => {
   });
 
   test("FAB has correct z-index on host", async ({ page }) => {
-    const zIndex = await page.locator("siteping-widget").evaluate(
-      (el) => getComputedStyle(el).zIndex,
-    );
+    const zIndex = await page.locator("siteping-widget").evaluate((el) => getComputedStyle(el).zIndex);
     expect(zIndex).toBe("2147483647");
   });
 });
@@ -163,9 +149,7 @@ test.describe("Annotation mode", () => {
     await s.click('[data-item-id="annotate"]');
     await page.waitForTimeout(300);
 
-    const hasOverlay = await page.evaluate(
-      () => !!document.querySelector("div[style*='crosshair']"),
-    );
+    const hasOverlay = await page.evaluate(() => !!document.querySelector("div[style*='crosshair']"));
     expect(hasOverlay).toBe(true);
   });
 
@@ -192,9 +176,7 @@ test.describe("Annotation mode", () => {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
 
-    const hasOverlay = await page.evaluate(
-      () => !!document.querySelector("div[style*='crosshair']"),
-    );
+    const hasOverlay = await page.evaluate(() => !!document.querySelector("div[style*='crosshair']"));
     expect(hasOverlay).toBe(false);
   });
 
@@ -214,7 +196,7 @@ test.describe("Annotation mode", () => {
     const hasRect = await page.evaluate(() => {
       const divs = document.querySelectorAll("div[style*='pointer-events']");
       return Array.from(divs).some(
-        (d) => (d as HTMLElement).style.width && parseInt((d as HTMLElement).style.width) > 50,
+        (d) => (d as HTMLElement).style.width && parseInt((d as HTMLElement).style.width, 10) > 50,
       );
     });
     expect(hasRect).toBe(true);
@@ -252,7 +234,10 @@ test.describe("Full annotation flow", () => {
     await page.evaluate(() => {
       const btns = document.querySelectorAll("button");
       for (const b of btns) {
-        if (b.textContent === "Envoyer") { b.click(); return; }
+        if (b.textContent === "Envoyer") {
+          b.click();
+          return;
+        }
       }
     });
     await page.waitForTimeout(500);

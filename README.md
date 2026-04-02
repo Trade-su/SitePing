@@ -199,9 +199,13 @@ model SitepingAnnotation {
   feedback         SitepingFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
   cssSelector      String
   xpath            String
-  textSnippet      String?
+  textSnippet      String
   elementTag       String
   elementId        String?
+  textPrefix       String
+  textSuffix       String
+  fingerprint      String
+  neighborText     String
   xPct             Float
   yPct             Float
   wPct             Float
@@ -306,7 +310,7 @@ bun run check
 
 | Suite | Tests | What it covers |
 |-------|-------|----------------|
-| Unit (Vitest) | 65 | Zod validation, EventBus, API client retry, identity persistence, theme normalization, date formatting |
+| Unit (Vitest) | 188 | Zod validation, API handlers, EventBus, API client retry, identity persistence, theme normalization, DOM anchoring, resolver, fuzzy matching, fingerprinting, XPath, text context |
 | E2E (Playwright) | 17 | Full browser: widget injection, FAB, panel, annotation draw, popup submit, marker creation, API persistence, cleanup |
 
 ---

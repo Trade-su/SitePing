@@ -1,10 +1,9 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Listener = (...args: any[]) => void;
 
 /**
  * Lightweight typed EventEmitter — zero dependencies.
  */
-export class EventBus<E extends Record<string, unknown[]>> {
+export class EventBus<E extends { [K in keyof E]: unknown[] }> {
   private listeners = new Map<keyof E, Set<Listener>>();
 
   on<K extends keyof E>(event: K, listener: (...args: E[K]) => void): () => void {
@@ -51,5 +50,4 @@ export interface WidgetEvents {
   "annotation:complete": [import("./annotator.js").AnnotationComplete];
   "annotations:toggle": [boolean];
   "panel:toggle": [boolean];
-  [key: string]: unknown[];
 }

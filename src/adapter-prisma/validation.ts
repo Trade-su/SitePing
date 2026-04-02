@@ -1,7 +1,7 @@
 import * as zod from "zod";
 
-// Zod v3.25+ compat: vitest resolves the module differently than Node ESM
-const z: typeof zod.z = ((zod as Record<string, unknown>).z ?? zod) as typeof zod.z;
+// Namespace import required: vitest resolves zod's CJS entry where named imports are unavailable.
+const z: typeof zod.z = ("z" in zod ? zod.z : zod) as typeof zod.z;
 
 const anchorSchema = z.object({
   cssSelector: z.string().min(1),
@@ -41,7 +41,7 @@ export const feedbackCreateSchema = z.object({
   userAgent: z.string().min(1),
   authorName: z.string().min(1).max(200),
   authorEmail: z.string().email().max(200),
-  annotations: z.array(annotationSchema).min(0),
+  annotations: z.array(annotationSchema),
   clientId: z.string().min(1),
 });
 
@@ -57,9 +57,7 @@ export type FeedbackPatchInput = zod.z.infer<typeof feedbackPatchSchema>;
  * Map Zod errors to a flat array of { field, message } objects.
  * Safe: does not leak input values or schema structure.
  */
-export function formatValidationErrors(
-  error: zod.z.ZodError,
-): Array<{ field: string; message: string }> {
+export function formatValidationErrors(error: zod.z.ZodError): Array<{ field: string; message: string }> {
   return error.issues.map((issue: { path: Array<string | number>; message: string }) => ({
     field: issue.path.join("."),
     message: issue.message,

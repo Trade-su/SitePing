@@ -49,10 +49,7 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT): ThemeColors {
   };
 }
 
-export function getTypeColor(
-  type: string,
-  colors: ThemeColors,
-): string {
+export function getTypeColor(type: string, colors: ThemeColors): string {
   switch (type) {
     case "question":
       return colors.typeQuestion;

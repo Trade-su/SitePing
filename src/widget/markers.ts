@@ -1,6 +1,6 @@
-import type { AnchorData, FeedbackResponse, RectData } from "../types.js";
-import { getTypeColor, type ThemeColors } from "../styles/theme.js";
 import { resolveAnnotation } from "../dom/resolver.js";
+import { getTypeColor, type ThemeColors } from "../styles/theme.js";
+import type { AnchorData, FeedbackResponse, RectData } from "../types.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import type { Tooltip } from "./tooltip.js";
@@ -150,9 +150,7 @@ export class MarkerManager {
   }
 
   private resolveOverlaps(): void {
-    const allMarkers = Array.from(
-      this.container.querySelectorAll<HTMLElement>("[data-feedback-id]"),
-    );
+    const allMarkers = Array.from(this.container.querySelectorAll<HTMLElement>("[data-feedback-id]"));
     for (let i = 1; i < allMarkers.length; i++) {
       const cr = allMarkers[i].getBoundingClientRect();
       const pr = allMarkers[i - 1].getBoundingClientRect();
@@ -169,7 +167,13 @@ export class MarkerManager {
       if (entry.feedback.id === feedbackId) {
         for (const markerEl of entry.elements) {
           markerEl.style.animation = "sp-pulse-outline 0.6s ease-out";
-          markerEl.addEventListener("animationend", () => { markerEl.style.animation = ""; }, { once: true });
+          markerEl.addEventListener(
+            "animationend",
+            () => {
+              markerEl.style.animation = "";
+            },
+            { once: true },
+          );
         }
       }
     }

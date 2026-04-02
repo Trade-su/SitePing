@@ -24,7 +24,3 @@ export function saveIdentity(identity: Identity): void {
     // Quota exceeded or localStorage disabled — identity works for this session only
   }
 }
-
-export function clearIdentity(): void {
-  localStorage.removeItem(STORAGE_KEY);
-}

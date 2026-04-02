@@ -15,15 +15,11 @@ import { generateXPath } from "./xpath.js";
 export function generateAnchor(element: Element): AnchorData {
   const cssSelector = finder(element, {
     // Filter out CSS-in-JS hashed class names
-    className: (name: string) =>
-      !/^(css|sc|emotion|styled)-/.test(name) &&
-      !/^[a-z]{1,3}[A-Za-z0-9]{4,8}$/.test(name),
+    className: (name: string) => !/^(css|sc|emotion|styled)-/.test(name) && !/^[a-z]{1,3}[A-Za-z0-9]{4,8}$/.test(name),
     // Prefer stable attributes
-    attr: (name: string) =>
-      ["data-testid", "data-id", "role", "aria-label"].includes(name),
+    attr: (name: string) => ["data-testid", "data-id", "role", "aria-label"].includes(name),
     // Exclude framework-generated dynamic IDs
-    idName: (name: string) =>
-      !name.startsWith("radix-") && !/^:r[0-9]+:$/.test(name),
+    idName: (name: string) => !name.startsWith("radix-") && !/^:r[0-9]+:$/.test(name),
     seedMinLength: 3,
     optimizedMinLength: 2,
   });
@@ -55,10 +51,7 @@ export function generateAnchor(element: Element): AnchorData {
  * Find the deepest DOM element that fully contains the drawn rectangle.
  * Walks from the center of the rect down through overlapping elements.
  */
-export function findAnchorElement(
-  rect: DOMRect,
-  root: Element = document.documentElement,
-): Element {
+export function findAnchorElement(rect: DOMRect, root: Element = document.documentElement): Element {
   const centerX = rect.x + rect.width / 2;
   const centerY = rect.y + rect.height / 2;
 
@@ -91,10 +84,7 @@ export function findAnchorElement(
  * Convert absolute rectangle coordinates to percentages
  * relative to an anchor element's bounding box.
  */
-export function rectToPercentages(
-  rect: DOMRect,
-  anchorBounds: DOMRect,
-): RectData {
+export function rectToPercentages(rect: DOMRect, anchorBounds: DOMRect): RectData {
   // Guard against zero-dimension anchors (collapsed/hidden elements)
   if (anchorBounds.width <= 0 || anchorBounds.height <= 0) {
     return { xPct: 0, yPct: 0, wPct: 1, hPct: 1 };

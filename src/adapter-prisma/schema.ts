@@ -25,7 +25,7 @@ export interface FieldDef {
   isUnique?: boolean;
 }
 
-export interface ModelDef {
+interface ModelDef {
   fields: Record<string, FieldDef>;
 }
 

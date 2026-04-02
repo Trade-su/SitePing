@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  feedbackCreateSchema,
-  feedbackPatchSchema,
-  formatValidationErrors,
-} from "../../adapter-prisma/validation.js";
+import { feedbackCreateSchema, feedbackPatchSchema, formatValidationErrors } from "../../adapter-prisma/validation.js";
 import { validAnnotation, validPayload } from "../fixtures.js";
 
 describe("feedbackCreateSchema", () => {

@@ -29,10 +29,7 @@ export function editDistance(a: string, b: string): number {
   for (let j = 1; j <= bLen; j++) {
     curr[0] = j;
     for (let i = 1; i <= aLen; i++) {
-      curr[i] =
-        a[i - 1] === b[j - 1]
-          ? prev[i - 1]
-          : 1 + Math.min(prev[i - 1], prev[i], curr[i - 1]);
+      curr[i] = a[i - 1] === b[j - 1] ? prev[i - 1] : 1 + Math.min(prev[i - 1], prev[i], curr[i - 1]);
     }
     const tmp = prev;
     prev = curr;
@@ -57,11 +54,7 @@ export function similarity(a: string, b: string): number {
  * Slides a window of `needle.length` over the haystack and returns the best
  * similarity score found. Returns 0 if below `minScore`.
  */
-export function fuzzyIncludes(
-  haystack: string,
-  needle: string,
-  minScore = 0.6,
-): number {
+export function fuzzyIncludes(haystack: string, needle: string, minScore = 0.6): number {
   if (!needle || !haystack) return 0;
   if (haystack.includes(needle)) return 1;
 

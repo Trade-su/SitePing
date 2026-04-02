@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { generateXPath } from "../../dom/xpath";
 
 describe("generateXPath", () => {
@@ -57,9 +57,7 @@ describe("generateXPath", () => {
     div.id = "it's";
     document.body.appendChild(div);
 
-    expect(generateXPath(div)).toBe(
-      `//div[@id=concat('it',\"'\",'s')]`,
-    );
+    expect(generateXPath(div)).toBe(`//div[@id=concat('it',"'",'s')]`);
   });
 
   it("caps depth at 6 segments for deeply nested element", () => {

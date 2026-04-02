@@ -37,28 +37,20 @@ export function resolveAnchor(anchor: AnchorData): AnchorResolution | null {
   // Level 1: Element ID (most stable)
   if (anchor.elementId) {
     const el = document.getElementById(anchor.elementId);
-    if (el && el.tagName === anchor.elementTag)
-      return { element: el, confidence: 1.0, strategy: "id" };
+    if (el && el.tagName === anchor.elementTag) return { element: el, confidence: 1.0, strategy: "id" };
   }
 
   // Level 2: CSS Selector
   try {
     const el = document.querySelector(anchor.cssSelector);
-    if (el && el.tagName === anchor.elementTag)
-      return { element: el, confidence: 0.95, strategy: "css" };
+    if (el && el.tagName === anchor.elementTag) return { element: el, confidence: 0.95, strategy: "css" };
   } catch {
     // Invalid selector — skip
   }
 
   // Level 3: XPath
   try {
-    const result = document.evaluate(
-      anchor.xpath,
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null,
-    );
+    const result = document.evaluate(anchor.xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
     const el = result.singleNodeValue;
     if (el instanceof Element && el.tagName === anchor.elementTag)
       return { element: el, confidence: 0.9, strategy: "xpath" };
@@ -161,9 +153,7 @@ function scoreCandidate(candidate: Element, anchor: AnchorData): number {
   if (anchor.neighborText) {
     totalWeight += 20;
     const candidateNeighbor = neighborText(candidate);
-    score += candidateNeighbor
-      ? similarity(candidateNeighbor, anchor.neighborText) * 20
-      : 0;
+    score += candidateNeighbor ? similarity(candidateNeighbor, anchor.neighborText) * 20 : 0;
   }
 
   return totalWeight > 0 ? score / totalWeight : 0;
@@ -174,10 +164,7 @@ function scoreCandidate(candidate: Element, anchor: AnchorData): number {
  * Converts stored percentage-based rect back to absolute coordinates
  * using the current bounding box of the resolved anchor element.
  */
-export function resolveAnnotation(
-  anchor: AnchorData,
-  rect: RectData,
-): ResolvedAnnotation | null {
+export function resolveAnnotation(anchor: AnchorData, rect: RectData): ResolvedAnnotation | null {
   const resolution = resolveAnchor(anchor);
 
   if (!resolution) return null;

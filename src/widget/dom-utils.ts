@@ -21,10 +21,7 @@ export function parseSvg(svgString: string): SVGSVGElement {
 }
 
 /** Create an element with optional class and style */
-export function el(
-  tag: string,
-  attrs?: Record<string, string>,
-): HTMLElement {
+export function el(tag: string, attrs?: Record<string, string>): HTMLElement {
   const element = document.createElement(tag);
   if (attrs) {
     for (const [key, value] of Object.entries(attrs)) {

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClient } from "../../widget/api-client.js";
 
 describe("ApiClient", () => {
@@ -12,7 +12,11 @@ describe("ApiClient", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    try { localStorage.clear(); } catch { /* noop */ }
+    try {
+      localStorage.clear();
+    } catch {
+      /* noop */
+    }
   });
 
   it("sends a POST with correct headers", async () => {
@@ -48,9 +52,16 @@ describe("ApiClient", () => {
 
     await expect(
       client.sendFeedback({
-        projectName: "test", type: "bug", message: "x",
-        url: "https://x.com", viewport: "1x1", userAgent: "t",
-        authorName: "A", authorEmail: "a@b.com", annotations: [], clientId: "u",
+        projectName: "test",
+        type: "bug",
+        message: "x",
+        url: "https://x.com",
+        viewport: "1x1",
+        userAgent: "t",
+        authorName: "A",
+        authorEmail: "a@b.com",
+        annotations: [],
+        clientId: "u",
       }),
     ).rejects.toThrow("Failed to send feedback: 400");
 
@@ -59,15 +70,23 @@ describe("ApiClient", () => {
   });
 
   it("retries on 5xx errors with backoff", async () => {
-    globalThis.fetch = vi.fn()
+    globalThis.fetch = vi
+      .fn()
       .mockResolvedValueOnce(new Response("", { status: 500 }))
       .mockResolvedValueOnce(new Response("", { status: 500 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: "1" }), { status: 201 }));
 
     const result = await client.sendFeedback({
-      projectName: "test", type: "bug", message: "x",
-      url: "https://x.com", viewport: "1x1", userAgent: "t",
-      authorName: "A", authorEmail: "a@b.com", annotations: [], clientId: "u",
+      projectName: "test",
+      type: "bug",
+      message: "x",
+      url: "https://x.com",
+      viewport: "1x1",
+      userAgent: "t",
+      authorName: "A",
+      authorEmail: "a@b.com",
+      annotations: [],
+      clientId: "u",
     });
 
     expect(result).toEqual({ id: "1" });
@@ -75,9 +94,7 @@ describe("ApiClient", () => {
   });
 
   it("sends GET with query params", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ feedbacks: [], total: 0 })),
-    );
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ feedbacks: [], total: 0 })));
 
     await client.getFeedbacks("test-project", { type: "bug", limit: 10 });
 
@@ -88,9 +105,7 @@ describe("ApiClient", () => {
   });
 
   it("sends PATCH for resolve", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ id: "1", status: "resolved" })),
-    );
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "1", status: "resolved" })));
 
     const result = await client.resolveFeedback("fb-1", true);
     expect(result.status).toBe("resolved");

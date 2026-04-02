@@ -1,5 +1,5 @@
 import { ANIMATION_CSS } from "./animations.js";
-import { type ThemeColors, cssVariables } from "./theme.js";
+import { cssVariables, type ThemeColors } from "./theme.js";
 
 /**
  * Build the complete CSS stylesheet for the Shadow DOM.
@@ -380,13 +380,6 @@ export function buildStyles(colors: ThemeColors): string {
 
     /* ---- Identity form ---- */
 
-    .sp-identity {
-      padding: 24px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
     .sp-identity-title {
       font-size: 15px;
       font-weight: 600;
@@ -474,12 +467,6 @@ export function buildStyles(colors: ThemeColors): string {
       color: var(--sp-text-secondary);
       text-align: center;
       gap: 8px;
-    }
-
-    .sp-empty-icon {
-      width: 48px;
-      height: 48px;
-      opacity: 0.3;
     }
 
     .sp-empty-text {

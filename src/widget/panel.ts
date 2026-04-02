@@ -1,9 +1,9 @@
-import type { FeedbackResponse, FeedbackStatus, FeedbackType } from "../types.js";
 import { getTypeColor, type ThemeColors } from "../styles/theme.js";
-import { el, setText, parseSvg, formatRelativeDate } from "./dom-utils.js";
-import { ICON_CHECK, ICON_CLOSE, ICON_SEARCH, ICON_UNDO } from "./icons.js";
-import type { EventBus, WidgetEvents } from "./events.js";
+import type { FeedbackResponse, FeedbackType } from "../types.js";
 import type { ApiClient } from "./api-client.js";
+import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
+import type { EventBus, WidgetEvents } from "./events.js";
+import { ICON_CHECK, ICON_CLOSE, ICON_SEARCH, ICON_UNDO } from "./icons.js";
 import type { MarkerManager } from "./markers.js";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -29,7 +29,7 @@ export class Panel {
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private readonly shadowRoot: ShadowRoot,
+    shadowRoot: ShadowRoot,
     private readonly colors: ThemeColors,
     private readonly bus: EventBus<WidgetEvents>,
     private readonly apiClient: ApiClient,
@@ -138,9 +138,7 @@ export class Panel {
 
   private async loadFeedbacks(): Promise<void> {
     const search = this.searchInput.value.trim() || undefined;
-    const typeFilter = this.activeFilters.has("all")
-      ? undefined
-      : (Array.from(this.activeFilters)[0] as FeedbackType);
+    const typeFilter = this.activeFilters.has("all") ? undefined : (Array.from(this.activeFilters)[0] as FeedbackType);
 
     const options: { limit: number; type?: FeedbackType; search?: string } = { limit: 50 };
     if (typeFilter) options.type = typeFilter;
@@ -308,9 +306,13 @@ export class Panel {
     if (card) {
       card.scrollIntoView({ behavior: "smooth", block: "center" });
       card.classList.add("sp-anim-flash");
-      card.addEventListener("animationend", () => {
-        card.classList.remove("sp-anim-flash");
-      }, { once: true });
+      card.addEventListener(
+        "animationend",
+        () => {
+          card.classList.remove("sp-anim-flash");
+        },
+        { once: true },
+      );
     }
   }
 
@@ -322,8 +324,8 @@ export class Panel {
   }
 
   destroy(): void {
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
     document.removeEventListener("sp-marker-click", this.onMarkerClick);
     this.root.remove();
   }
 }
-

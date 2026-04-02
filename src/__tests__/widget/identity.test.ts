@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
-import { getIdentity, saveIdentity, clearIdentity } from "../../widget/identity.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getIdentity, saveIdentity } from "../../widget/identity.js";
 
 describe("identity", () => {
   beforeEach(() => {
@@ -7,8 +7,12 @@ describe("identity", () => {
     const store: Record<string, string> = {};
     vi.stubGlobal("localStorage", {
       getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
     });
   });
 
@@ -20,12 +24,6 @@ describe("identity", () => {
     saveIdentity({ name: "Alice", email: "alice@test.com" });
     const identity = getIdentity();
     expect(identity).toEqual({ name: "Alice", email: "alice@test.com" });
-  });
-
-  it("clears identity", () => {
-    saveIdentity({ name: "Alice", email: "alice@test.com" });
-    clearIdentity();
-    expect(getIdentity()).toBeNull();
   });
 
   it("returns null for corrupted JSON", () => {

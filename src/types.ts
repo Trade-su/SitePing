@@ -137,25 +137,3 @@ export interface AnnotationResponse {
   devicePixelRatio: number;
   createdAt: string;
 }
-
-// ---------------------------------------------------------------------------
-// Adapter interface (extensible for Drizzle, raw SQL, etc.)
-// ---------------------------------------------------------------------------
-
-export interface GetFeedbacksOptions {
-  page?: number | undefined;
-  limit?: number | undefined;
-  type?: FeedbackType | undefined;
-  status?: FeedbackStatus | undefined;
-  search?: string | undefined;
-}
-
-export interface SitepingAdapter {
-  saveFeedback(payload: FeedbackPayload): Promise<FeedbackResponse>;
-  getFeedbacks(
-    projectName: string,
-    options?: GetFeedbacksOptions,
-  ): Promise<{ feedbacks: FeedbackResponse[]; total: number }>;
-  resolveFeedback(id: string): Promise<FeedbackResponse>;
-  unresolveFeedback(id: string): Promise<FeedbackResponse>;
-}

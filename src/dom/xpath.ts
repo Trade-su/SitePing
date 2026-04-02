@@ -9,7 +9,7 @@
  */
 export function generateXPath(element: Element): string {
   if (element.id) {
-    const safeId = element.id.includes("'") ? `concat('${element.id.replace(/'/g, "',\"'\",'") }')` : `'${element.id}'`;
+    const safeId = element.id.includes("'") ? `concat('${element.id.replace(/'/g, "',\"'\",'")}')` : `'${element.id}'`;
     return `//${element.localName}[@id=${safeId}]`;
   }
 
@@ -21,7 +21,9 @@ export function generateXPath(element: Element): string {
     const parent: Element | null = current.parentElement;
 
     if (current.id) {
-      const safeId = current.id.includes("'") ? `concat('${current.id.replace(/'/g, "',\"'\",'") }')` : `'${current.id}'`;
+      const safeId = current.id.includes("'")
+        ? `concat('${current.id.replace(/'/g, "',\"'\",'")}')`
+        : `'${current.id}'`;
       segments.unshift(`/${tag}[@id=${safeId}]`);
       return "/" + segments.join("");
     }

@@ -1,6 +1,6 @@
-import * as p from "@clack/prompts";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import * as p from "@clack/prompts";
 import { injectPrismaModels } from "../generators/prisma.js";
 import { generateRoute } from "../generators/route.js";
 
@@ -33,18 +33,12 @@ export async function initCommand(): Promise<void> {
           p.log.info("Les modèles Siteping existent déjà dans le schema.");
         }
       } catch (error) {
-        p.log.error(
-          `Erreur lors de l'injection : ${error instanceof Error ? error.message : String(error)}`,
-        );
+        p.log.error(`Erreur lors de l'injection : ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   } else {
-    p.log.warn(
-      "Aucun fichier schema.prisma trouvé. Vous devrez ajouter les modèles manuellement.",
-    );
-    p.log.info(
-      "Consultez la documentation : https://github.com/neosianexus/siteping#prisma-schema",
-    );
+    p.log.warn("Aucun fichier schema.prisma trouvé. Vous devrez ajouter les modèles manuellement.");
+    p.log.info("Consultez la documentation : https://github.com/neosianexus/siteping#prisma-schema");
   }
 
   // Step 2: API route
@@ -66,9 +60,7 @@ export async function initCommand(): Promise<void> {
         p.log.info(`La route existe déjà : ${path}`);
       }
     } catch (error) {
-      p.log.error(
-        `Erreur : ${error instanceof Error ? error.message : String(error)}`,
-      );
+      p.log.error(`Erreur : ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

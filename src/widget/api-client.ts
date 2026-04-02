@@ -1,9 +1,4 @@
-import type {
-  FeedbackPayload,
-  FeedbackResponse,
-  FeedbackStatus,
-  FeedbackType,
-} from "../types.js";
+import type { FeedbackPayload, FeedbackResponse, FeedbackStatus, FeedbackType } from "../types.js";
 
 const MAX_RETRIES = 3;
 const TIMEOUT_MS = 10_000;
@@ -13,11 +8,7 @@ const RETRY_QUEUE_KEY = "siteping_retry_queue";
 // Core fetch with retry + exponential backoff + jitter
 // ---------------------------------------------------------------------------
 
-async function resilientFetch(
-  url: string,
-  init: RequestInit,
-  retries = MAX_RETRIES,
-): Promise<Response> {
+async function resilientFetch(url: string, init: RequestInit, retries = MAX_RETRIES): Promise<Response> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -41,7 +32,7 @@ async function resilientFetch(
     }
 
     // Exponential backoff with jitter: 1s, 2s, 4s + random ±500ms
-    const baseDelay = 1000 * Math.pow(2, attempt);
+    const baseDelay = 1000 * 2 ** attempt;
     const jitter = Math.random() * 1000 - 500;
     await new Promise((r) => setTimeout(r, baseDelay + jitter));
   }
@@ -56,9 +47,7 @@ async function resilientFetch(
 function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
   try {
     const raw = localStorage.getItem(RETRY_QUEUE_KEY);
-    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> = raw
-      ? JSON.parse(raw)
-      : [];
+    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> = raw ? JSON.parse(raw) : [];
     queue.push({ endpoint, payload });
     localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(queue));
   } catch {
@@ -71,29 +60,35 @@ export async function flushRetryQueue(endpoint: string): Promise<void> {
     const raw = localStorage.getItem(RETRY_QUEUE_KEY);
     if (!raw) return;
 
-    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> =
-      JSON.parse(raw);
+    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> = JSON.parse(raw);
 
-    // Separate matching entries from unrelated ones
-    const remaining = queue.filter((e) => e.endpoint !== endpoint);
     const toRetry = queue.filter((e) => e.endpoint === endpoint);
+    if (toRetry.length === 0) return;
 
-    // Preserve unrelated entries, remove matching ones
+    const failed: Array<{ endpoint: string; payload: FeedbackPayload }> = [];
+
+    for (const entry of toRetry) {
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry.payload),
+        });
+        if (!res.ok) failed.push(entry);
+      } catch {
+        failed.push(entry);
+      }
+    }
+
+    // Rebuild queue: keep unrelated entries + failed retries
+    const remaining = queue.filter((e) => e.endpoint !== endpoint).concat(failed);
     if (remaining.length > 0) {
       localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(remaining));
     } else {
       localStorage.removeItem(RETRY_QUEUE_KEY);
     }
-
-    for (const entry of toRetry) {
-      await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry.payload),
-      }).catch(() => {});
-    }
   } catch {
-    // Ignore
+    // Ignore — localStorage may be unavailable
   }
 }
 
@@ -141,10 +136,7 @@ export class ApiClient {
     if (options?.status) params.set("status", options.status);
     if (options?.search) params.set("search", options.search);
 
-    const response = await resilientFetch(
-      `${this.endpoint}?${params.toString()}`,
-      { method: "GET" },
-    );
+    const response = await resilientFetch(`${this.endpoint}?${params.toString()}`, { method: "GET" });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch feedbacks: ${response.status}`);
@@ -153,10 +145,7 @@ export class ApiClient {
     return await response.json();
   }
 
-  async resolveFeedback(
-    id: string,
-    resolved: boolean,
-  ): Promise<FeedbackResponse> {
+  async resolveFeedback(id: string, resolved: boolean): Promise<FeedbackResponse> {
     const response = await resilientFetch(this.endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

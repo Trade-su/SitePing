@@ -1,12 +1,13 @@
-export { initSiteping } from "./widget/index.js";
 export type {
-  SitepingConfig,
-  SitepingInstance,
-  FeedbackType,
-  FeedbackStatus,
+  AnchorData,
+  AnnotationPayload,
+  AnnotationResponse,
   FeedbackPayload,
   FeedbackResponse,
-  AnnotationPayload,
-  AnchorData,
+  FeedbackStatus,
+  FeedbackType,
   RectData,
+  SitepingConfig,
+  SitepingInstance,
 } from "./widget/index.js";
+export { initSiteping } from "./widget/index.js";

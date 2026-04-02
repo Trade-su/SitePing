@@ -1,14 +1,14 @@
-import type { FeedbackPayload, SitepingConfig, SitepingInstance } from "../types.js";
-import { buildThemeColors, type ThemeColors } from "../styles/theme.js";
 import { buildStyles } from "../styles/base.js";
+import { buildThemeColors } from "../styles/theme.js";
+import type { FeedbackPayload, SitepingConfig, SitepingInstance } from "../types.js";
+import { Annotator } from "./annotator.js";
+import { ApiClient, flushRetryQueue } from "./api-client.js";
 import { EventBus, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
-import { Panel } from "./panel.js";
-import { Annotator } from "./annotator.js";
-import { Tooltip } from "./tooltip.js";
+import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
-import { ApiClient, flushRetryQueue } from "./api-client.js";
-import { getIdentity, saveIdentity, type Identity } from "./identity.js";
+import { Panel } from "./panel.js";
+import { Tooltip } from "./tooltip.js";
 
 /**
  * Main widget launcher — orchestrates all components.
@@ -55,7 +55,9 @@ export function launch(config: SitepingConfig): SitepingInstance {
   const host = document.createElement("siteping-widget");
   host.style.cssText = "position:fixed;z-index:2147483647;";
   // Use open mode only for testing — closed in production for CSS isolation
-  const shadowMode = (config as unknown as Record<string, unknown>).__testMode ? "open" as const : "closed" as const;
+  const shadowMode = (config as unknown as Record<string, unknown>).__testMode
+    ? ("open" as const)
+    : ("closed" as const);
   const shadow = host.attachShadow({ mode: shadowMode });
 
   // Inject styles into Shadow DOM via adoptedStyleSheets
@@ -81,7 +83,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
     // Ensure identity
     let identity = getIdentity();
     if (!identity) {
-      identity = await promptIdentity(shadow, colors);
+      identity = await promptIdentity(shadow);
       if (!identity) return; // User cancelled
       saveIdentity(identity);
     }
@@ -130,7 +132,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
  * Show a modal identity form inside the Shadow DOM.
  * Returns null if the user cancels.
  */
-function promptIdentity(shadowRoot: ShadowRoot, colors: ThemeColors): Promise<Identity | null> {
+function promptIdentity(shadowRoot: ShadowRoot): Promise<Identity | null> {
   return new Promise((resolve) => {
     const backdrop = document.createElement("div");
     backdrop.style.cssText = `

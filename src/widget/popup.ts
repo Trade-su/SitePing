@@ -1,9 +1,9 @@
+import { getTypeColor, type ThemeColors } from "../styles/theme.js";
 import type { FeedbackType } from "../types.js";
-import { type ThemeColors, getTypeColor } from "../styles/theme.js";
-import { el, setText, parseSvg } from "./dom-utils.js";
+import { el, parseSvg, setText } from "./dom-utils.js";
 import { ICON_BUG, ICON_CHANGE, ICON_OTHER, ICON_QUESTION } from "./icons.js";
 
-export interface PopupResult {
+interface PopupResult {
   type: FeedbackType;
   message: string;
 }
@@ -229,7 +229,9 @@ export class Popup {
   private hideElement(): void {
     this.root.style.opacity = "0";
     this.root.style.transform = "translateY(6px)";
-    setTimeout(() => { this.root.style.display = "none"; }, 200);
+    setTimeout(() => {
+      this.root.style.display = "none";
+    }, 200);
   }
 
   destroy(): void {

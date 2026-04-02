@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { editDistance, similarity, fuzzyIncludes } from "../../dom/fuzzy";
+import { editDistance, fuzzyIncludes, similarity } from "../../dom/fuzzy";
 
 describe("editDistance", () => {
   it("returns 0 for identical strings", () => {
@@ -38,11 +38,11 @@ describe("editDistance", () => {
     expect(dist).toBe(editDistance("xy", "abcdef"));
   });
 
-  it('computes kitten → sitting = 3', () => {
+  it("computes kitten → sitting = 3", () => {
     expect(editDistance("kitten", "sitting")).toBe(3);
   });
 
-  it('computes sunday → saturday = 3', () => {
+  it("computes sunday → saturday = 3", () => {
     expect(editDistance("sunday", "saturday")).toBe(3);
   });
 });
