@@ -4,26 +4,20 @@
  * SVG icons use a DOMParser for trusted static strings.
  */
 
-let _parser: DOMParser | null = null;
-
-/** Lazy-init DOMParser — safe for SSR (never called on server) */
-function getParser(): DOMParser {
-  if (!_parser) _parser = new DOMParser();
-  return _parser;
-}
-
 /**
  * Parse a trusted SVG string into an SVGElement.
  * Only use with hardcoded icon constants — never with user input.
+ * Uses createContextualFragment for native document-context parsing
+ * (DOMParser creates nodes in a foreign document that don't render in Shadow DOM).
  */
 export function parseSvg(svgString: string): SVGSVGElement {
-  const doc = getParser().parseFromString(svgString, "image/svg+xml");
-  const root = doc.documentElement;
-  // Validate we actually got an SVG (malformed input returns an HTML error doc)
-  if (root.nodeName !== "svg") {
+  const range = document.createRange();
+  const fragment = range.createContextualFragment(svgString);
+  const svg = fragment.firstElementChild;
+  if (!svg || svg.nodeName.toLowerCase() !== "svg") {
     throw new Error("[siteping] Invalid SVG string");
   }
-  return root as unknown as SVGSVGElement;
+  return svg as SVGSVGElement;
 }
 
 /** Create an element with optional class and style */

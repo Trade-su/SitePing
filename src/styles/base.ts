@@ -78,6 +78,8 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-radial {
       position: fixed;
       pointer-events: none;
+      width: 56px;
+      height: 56px;
     }
 
     .sp-radial--bottom-right {
@@ -92,6 +94,9 @@ export function buildStyles(colors: ThemeColors): string {
 
     .sp-radial-item {
       position: absolute;
+      /* Center 44px items on the 56px FAB */
+      left: 6px;
+      bottom: 6px;
       width: 44px;
       height: 44px;
       border-radius: 50%;
@@ -116,10 +121,12 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-radial-item svg {
       width: 20px;
       height: 20px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
     }
 
     .sp-radial-label {
-      position: absolute;
       white-space: nowrap;
       font-size: 11px;
       font-weight: 500;
@@ -129,8 +136,7 @@ export function buildStyles(colors: ThemeColors): string {
       transition: opacity 0.15s ease;
     }
 
-    .sp-radial-item:hover + .sp-radial-label,
-    .sp-radial-item--open + .sp-radial-label {
+    .sp-radial-item:hover .sp-radial-label {
       opacity: 1;
     }
 

@@ -15,10 +15,9 @@ interface RadialItem {
   icon: string;
   iconAlt?: string;
   label: string;
-  angle: number;
 }
 
-const RADIUS = 80;
+const ITEM_GAP = 56;
 
 /**
  * Floating Action Button with radial menu.
@@ -42,10 +41,11 @@ export class Fab {
     const position = config.position ?? "bottom-right";
     const isRight = position === "bottom-right";
 
+    // Vertical stack above the FAB
     this.items = [
-      { id: "chat", icon: ICON_CHAT, label: "Messages", angle: isRight ? 135 : 45 },
-      { id: "annotate", icon: ICON_ANNOTATE, label: "Annoter", angle: isRight ? 180 : 0 },
-      { id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF, label: "Annotations", angle: isRight ? 225 : 315 },
+      { id: "chat", icon: ICON_CHAT, label: "Messages" },
+      { id: "annotate", icon: ICON_ANNOTATE, label: "Annoter" },
+      { id: "toggle-annotations", icon: ICON_EYE, iconAlt: ICON_EYE_OFF, label: "Annotations" },
     ];
 
     // FAB button
@@ -80,11 +80,11 @@ export class Fab {
       label.className = "sp-radial-label";
       label.textContent = item.label;
       label.style.cssText = isRight
-        ? "right: 52px; top: 50%; transform: translateY(-50%);"
-        : "left: 52px; top: 50%; transform: translateY(-50%);";
+        ? "position:absolute; right:54px; top:50%; transform:translateY(-50%); white-space:nowrap;"
+        : "position:absolute; left:54px; top:50%; transform:translateY(-50%); white-space:nowrap;";
+      btn.appendChild(label);
 
       this.radialContainer.appendChild(btn);
-      this.radialContainer.appendChild(label);
     }
 
     this.root = document.createElement("div");
@@ -92,8 +92,13 @@ export class Fab {
     this.root.appendChild(this.fab);
     shadowRoot.appendChild(this.root);
 
+    // Close radial menu on click outside.
+    // With closed Shadow DOM, composedPath() stops at the host element,
+    // so we check against the host instead of internal nodes.
+    const host = shadowRoot.host;
     this.onDocumentClick = (e: MouseEvent) => {
-      if (this.isOpen && !this.root.contains(e.composedPath()[0] as Node)) {
+      const target = e.composedPath()[0] as Node;
+      if (this.isOpen && target !== host && !host.contains(target)) {
         this.close();
       }
     };
@@ -117,11 +122,9 @@ export class Fab {
 
     const buttons = this.radialContainer.querySelectorAll<HTMLButtonElement>(".sp-radial-item");
     buttons.forEach((btn, i) => {
-      const item = this.items[i];
-      const rad = (item.angle * Math.PI) / 180;
-      const x = Math.cos(rad) * RADIUS;
-      const y = -Math.sin(rad) * RADIUS;
-      btn.style.transform = `translate(${x}px, ${y}px)`;
+      // Stack vertically above the FAB with initial offset + gap
+      const y = -(16 + ITEM_GAP * (i + 1));
+      btn.style.transform = `translate(0px, ${y}px)`;
       btn.classList.add("sp-radial-item--open");
     });
   }
