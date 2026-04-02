@@ -1,26 +1,26 @@
 {
   "name": "@neosianexus/siteping",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Feedback widget for client review during development — annotations, bugs, questions directly on the site",
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/widget/index.d.mts",
-      "import": "./dist/widget/index.mjs",
+      "types": "./dist/widget/index.d.ts",
+      "import": "./dist/widget/index.js",
       "require": "./dist/widget/index.cjs"
     },
     "./adapter-prisma": {
-      "types": "./dist/adapter-prisma/index.d.mts",
-      "import": "./dist/adapter-prisma/index.mjs",
+      "types": "./dist/adapter-prisma/index.d.ts",
+      "import": "./dist/adapter-prisma/index.js",
       "require": "./dist/adapter-prisma/index.cjs"
     }
   },
   "bin": {
-    "siteping": "./dist/cli/index.mjs"
+    "siteping": "./dist/cli/index.js"
   },
   "main": "./dist/widget/index.cjs",
-  "module": "./dist/widget/index.mjs",
-  "types": "./dist/widget/index.d.mts",
+  "module": "./dist/widget/index.js",
+  "types": "./dist/widget/index.d.ts",
   "files": [
     "dist"
   ],
