@@ -265,11 +265,12 @@ export class Panel {
       this.markers.highlight(feedback.id);
     });
 
-    // Click: scroll page to annotation
+    // Click: scroll page to annotation + show highlight
     card.addEventListener("click", () => {
       if (feedback.annotations.length > 0) {
         const ann = feedback.annotations[0];
         window.scrollTo({ left: ann.scrollX, top: ann.scrollY, behavior: "smooth" });
+        this.markers.pinHighlight(feedback);
       }
     });
 

@@ -10,6 +10,8 @@ interface MarkerEntry {
   elements: HTMLElement[];
 }
 
+const HIGHLIGHT_FADE = 300;
+
 /**
  * Numbered markers on the page for each feedback annotation.
  *
@@ -20,6 +22,9 @@ interface MarkerEntry {
 export class MarkerManager {
   private container: HTMLElement;
   private entries: MarkerEntry[] = [];
+  private highlightElements: HTMLElement[] = [];
+  private pinnedFeedback: FeedbackResponse | null = null;
+  private onDocumentClick: ((e: MouseEvent) => void) | null = null;
 
   get count(): number {
     return this.entries.length;
@@ -31,7 +36,7 @@ export class MarkerManager {
     private readonly bus: EventBus<WidgetEvents>,
   ) {
     this.container = el("div", {
-      style: "position:fixed;inset:0;pointer-events:none;z-index:2147483646;",
+      style: "position:absolute;top:0;left:0;pointer-events:none;z-index:2147483646;",
     });
     this.container.id = "siteping-markers";
     document.body.appendChild(this.container);
@@ -87,9 +92,9 @@ export class MarkerManager {
 
     const marker = el("div", {
       style: `
-        position:fixed;
-        top:${rect.top - 12}px;
-        left:${rect.right - 12}px;
+        position:absolute;
+        top:${rect.top + window.scrollY - 12}px;
+        left:${rect.right + window.scrollX - 12}px;
         width:24px;height:24px;
         border-radius:50%;
         background:${isResolved ? "#f3f4f6" : "#fff"};
@@ -110,15 +115,18 @@ export class MarkerManager {
       marker.style.transform = "scale(1.17)";
       marker.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
       this.tooltip.show(feedback, marker.getBoundingClientRect());
+      if (!this.pinnedFeedback) this.showHighlight(feedback);
     });
 
     marker.addEventListener("mouseleave", () => {
       marker.style.transform = "scale(1)";
       marker.style.boxShadow = "none";
       this.tooltip.scheduleHide();
+      if (!this.pinnedFeedback) this.clearHighlight();
     });
 
     marker.addEventListener("click", () => {
+      this.pinHighlight(feedback);
       this.bus.emit("panel:toggle", true);
       marker.dispatchEvent(
         new CustomEvent("sp-marker-click", {
@@ -157,12 +165,89 @@ export class MarkerManager {
     }
   }
 
+  showHighlight(feedback: FeedbackResponse): void {
+    this.removeHighlightElements();
+
+    for (const annotation of feedback.annotations) {
+      const anchor = {
+        ...annotation,
+        textSnippet: annotation.textSnippet ?? undefined,
+        elementId: annotation.elementId ?? undefined,
+      };
+      const resolved = resolveAnnotation(anchor, annotation);
+      if (!resolved) continue;
+
+      const typeColor = getTypeColor(feedback.type, this.colors);
+      const rect = resolved.rect;
+
+      const highlight = el("div", {
+        style: `
+          position:absolute;
+          top:${rect.top + window.scrollY}px;
+          left:${rect.left + window.scrollX}px;
+          width:${rect.width}px;
+          height:${rect.height}px;
+          border:2px solid ${typeColor};
+          background:${typeColor}1a;
+          border-radius:4px;
+          pointer-events:none;
+          z-index:-1;
+          opacity:0;
+          transition:opacity ${HIGHLIGHT_FADE}ms ease;
+        `,
+      });
+
+      this.container.appendChild(highlight);
+      this.highlightElements.push(highlight);
+
+      // Force reflow then fade in
+      highlight.offsetHeight;
+      highlight.style.opacity = "1";
+    }
+  }
+
+  pinHighlight(feedback: FeedbackResponse): void {
+    this.unpinHighlight();
+    this.showHighlight(feedback);
+    this.pinnedFeedback = feedback;
+
+    this.onDocumentClick = (e: MouseEvent) => {
+      if (this.container.contains(e.target as Node)) return;
+      this.unpinHighlight();
+    };
+    document.addEventListener("click", this.onDocumentClick, { capture: true });
+  }
+
+  private unpinHighlight(): void {
+    if (this.onDocumentClick) {
+      document.removeEventListener("click", this.onDocumentClick, { capture: true });
+      this.onDocumentClick = null;
+    }
+    this.pinnedFeedback = null;
+    this.clearHighlight();
+  }
+
+  private clearHighlight(): void {
+    for (const h of this.highlightElements) {
+      h.style.opacity = "0";
+      setTimeout(() => h.remove(), HIGHLIGHT_FADE);
+    }
+    this.highlightElements = [];
+  }
+
+  private removeHighlightElements(): void {
+    for (const h of this.highlightElements) h.remove();
+    this.highlightElements = [];
+  }
+
   clear(): void {
+    this.unpinHighlight();
     this.container.replaceChildren();
     this.entries = [];
   }
 
   destroy(): void {
+    this.unpinHighlight();
     this.container.remove();
   }
 }
