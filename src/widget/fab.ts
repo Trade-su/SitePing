@@ -97,8 +97,7 @@ export class Fab {
     // so we check against the host instead of internal nodes.
     const host = shadowRoot.host;
     this.onDocumentClick = (e: MouseEvent) => {
-      const target = e.composedPath()[0] as Node;
-      if (this.isOpen && target !== host && !host.contains(target)) {
+      if (this.isOpen && !e.composedPath().includes(host)) {
         this.close();
       }
     };
