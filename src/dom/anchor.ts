@@ -1,5 +1,7 @@
 import { finder } from "@medv/finder";
-import type { AnchorData } from "../types.js";
+import type { AnchorData, RectData } from "../types.js";
+import { generateFingerprint } from "./fingerprint.js";
+import { adjacentText, neighborText } from "./text-context.js";
 import { generateXPath } from "./xpath.js";
 
 /**
@@ -29,12 +31,21 @@ export function generateAnchor(element: Element): AnchorData {
   const xpath = generateXPath(element);
 
   const rawText = element.textContent?.trim() ?? "";
-  const textSnippet = rawText.length > 0 ? rawText.slice(0, 50) : undefined;
+  const textSnippet = rawText.slice(0, 50);
+
+  const textPrefix = adjacentText(element, "before");
+  const textSuffix = adjacentText(element, "after");
+  const fingerprint = generateFingerprint(element);
+  const neighbor = neighborText(element);
 
   return {
     cssSelector,
     xpath,
     textSnippet,
+    textPrefix,
+    textSuffix,
+    fingerprint,
+    neighborText: neighbor,
     elementTag: element.tagName,
     elementId: element.id || undefined,
   };
@@ -83,7 +94,7 @@ export function findAnchorElement(
 export function rectToPercentages(
   rect: DOMRect,
   anchorBounds: DOMRect,
-): { xPct: number; yPct: number; wPct: number; hPct: number } {
+): RectData {
   // Guard against zero-dimension anchors (collapsed/hidden elements)
   if (anchorBounds.width <= 0 || anchorBounds.height <= 0) {
     return { xPct: 0, yPct: 0, wPct: 1, hPct: 1 };

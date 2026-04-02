@@ -6,9 +6,13 @@ const z: typeof zod.z = ((zod as Record<string, unknown>).z ?? zod) as typeof zo
 const anchorSchema = z.object({
   cssSelector: z.string().min(1),
   xpath: z.string().min(1),
-  textSnippet: z.string().optional(),
+  textSnippet: z.string(),
   elementTag: z.string().min(1),
   elementId: z.string().optional(),
+  textPrefix: z.string(),
+  textSuffix: z.string(),
+  fingerprint: z.string(),
+  neighborText: z.string(),
 });
 
 const rectSchema = z.object({

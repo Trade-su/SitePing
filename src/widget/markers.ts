@@ -1,9 +1,29 @@
-import type { FeedbackResponse } from "../types.js";
+import type { AnchorData, FeedbackResponse, RectData } from "../types.js";
 import { getTypeColor, type ThemeColors } from "../styles/theme.js";
 import { resolveAnnotation } from "../dom/resolver.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import type { Tooltip } from "./tooltip.js";
+
+type Annotation = FeedbackResponse["annotations"][number];
+
+function toAnchorData(a: Annotation): AnchorData {
+  return {
+    cssSelector: a.cssSelector,
+    xpath: a.xpath,
+    textSnippet: a.textSnippet,
+    elementTag: a.elementTag,
+    elementId: a.elementId ?? undefined,
+    textPrefix: a.textPrefix,
+    textSuffix: a.textSuffix,
+    fingerprint: a.fingerprint,
+    neighborText: a.neighborText,
+  };
+}
+
+function toRectData(a: Annotation): RectData {
+  return { xPct: a.xPct, yPct: a.yPct, wPct: a.wPct, hPct: a.hPct };
+}
 
 interface MarkerEntry {
   feedback: FeedbackResponse;
@@ -51,12 +71,7 @@ export class MarkerManager {
     feedbacks.forEach((feedback, i) => {
       const entry: MarkerEntry = { feedback, elements: [] };
       for (const annotation of feedback.annotations) {
-        const anchor = {
-          ...annotation,
-          textSnippet: annotation.textSnippet ?? undefined,
-          elementId: annotation.elementId ?? undefined,
-        };
-        const resolved = resolveAnnotation(anchor, annotation);
+        const resolved = resolveAnnotation(toAnchorData(annotation), toRectData(annotation));
         if (!resolved) continue;
         const marker = this.createMarker(i + 1, feedback, resolved.rect);
         this.container.appendChild(marker);
@@ -70,12 +85,7 @@ export class MarkerManager {
   addFeedback(feedback: FeedbackResponse, index: number): void {
     const entry: MarkerEntry = { feedback, elements: [] };
     for (const annotation of feedback.annotations) {
-      const anchor = {
-        ...annotation,
-        textSnippet: annotation.textSnippet ?? undefined,
-        elementId: annotation.elementId ?? undefined,
-      };
-      const resolved = resolveAnnotation(anchor, annotation);
+      const resolved = resolveAnnotation(toAnchorData(annotation), toRectData(annotation));
       if (!resolved) continue;
       const marker = this.createMarker(index, feedback, resolved.rect);
       marker.style.animation = "sp-marker-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both";
@@ -169,12 +179,7 @@ export class MarkerManager {
     this.removeHighlightElements();
 
     for (const annotation of feedback.annotations) {
-      const anchor = {
-        ...annotation,
-        textSnippet: annotation.textSnippet ?? undefined,
-        elementId: annotation.elementId ?? undefined,
-      };
-      const resolved = resolveAnnotation(anchor, annotation);
+      const resolved = resolveAnnotation(toAnchorData(annotation), toRectData(annotation));
       if (!resolved) continue;
 
       const typeColor = getTypeColor(feedback.type, this.colors);

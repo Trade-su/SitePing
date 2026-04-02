@@ -57,12 +57,20 @@ export interface AnchorData {
   cssSelector: string;
   /** XPath — fallback 1 */
   xpath: string;
-  /** First 50 chars of element innerText — fallback 2 (fuzzy) */
-  textSnippet?: string | undefined;
+  /** First 50 chars of element innerText — empty string if none */
+  textSnippet: string;
   /** Tag name for validation (e.g. "DIV", "SECTION") */
   elementTag: string;
   /** Element id attribute if available — most stable */
   elementId?: string | undefined;
+  /** ~32 chars of text before this element in document flow (disambiguation) */
+  textPrefix: string;
+  /** ~32 chars of text after this element in document flow (disambiguation) */
+  textSuffix: string;
+  /** Structural fingerprint: "childCount:siblingIdx:attrHash" */
+  fingerprint: string;
+  /** Text content of adjacent sibling elements (context) */
+  neighborText: string;
 }
 
 export interface RectData {
@@ -111,9 +119,13 @@ export interface AnnotationResponse {
   feedbackId: string;
   cssSelector: string;
   xpath: string;
-  textSnippet: string | null;
+  textSnippet: string;
   elementTag: string;
   elementId: string | null;
+  textPrefix: string;
+  textSuffix: string;
+  fingerprint: string;
+  neighborText: string;
   xPct: number;
   yPct: number;
   wPct: number;
