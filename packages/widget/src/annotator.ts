@@ -56,6 +56,7 @@ export class Annotator {
         cursor:crosshair;
       `,
     });
+    this.overlay.setAttribute("aria-hidden", "true");
 
     // Toolbar — glassmorphism bar
     this.toolbar = el("div", {
