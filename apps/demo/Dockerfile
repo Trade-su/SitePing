@@ -1,24 +1,12 @@
-FROM oven/bun:1.3.11-alpine AS deps
-WORKDIR /app
-COPY package.json bun.lock ./
-COPY packages/core/package.json packages/core/
-COPY packages/widget/package.json packages/widget/
-COPY packages/adapter-prisma/package.json packages/adapter-prisma/
-COPY packages/cli/package.json packages/cli/
-COPY apps/demo/package.json apps/demo/
-RUN bun install --frozen-lockfile
-
 FROM oven/bun:1.3.11-alpine AS builder
 RUN apk add --no-cache nodejs
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN bun install --frozen-lockfile
 
-# Build workspace packages (widget + adapter must be built before demo)
+# Build workspace packages then demo
 RUN bun run --filter='@siteping/widget' build && \
     bun run --filter='@siteping/adapter-prisma' build
-
-# Build demo app (Next.js needs node)
 RUN cd apps/demo && bun run build
 
 # --- Runner ---
