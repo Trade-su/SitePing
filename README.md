@@ -31,7 +31,7 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 | **Self-hosted** | Yes — your DB, your data | No (SaaS) | No (SaaS) |
 | **npm package** | `npm install` and go | npm + script tag | Script tag only |
 | **Framework-native** | First-class Next.js support | Framework-agnostic | Framework-agnostic |
-| **Pricing** | Free & open source | From $39/mo | From $39/mo |
+| **Pricing** | Free & open source | From $39/mo | From $42/mo |
 | **DOM-anchored annotations** | Multi-selector (CSS + XPath + text) | Screenshot-based | Pin-based |
 | **Annotations survive layout changes** | Yes (percentage-relative rects) | No (pixel coordinates) | Partially |
 | **Customizable** | Full control (accent color, position, events) | Limited | Limited |
