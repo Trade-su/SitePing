@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 const ROUTE_TEMPLATE = `import { createSitepingHandler } from "@neosianexus/siteping/adapter-prisma";
 import { prisma } from "@/lib/prisma";
 
-export const { GET, POST, PATCH } = createSitepingHandler({ prisma });
+export const { GET, POST, PATCH, DELETE } = createSitepingHandler({ prisma });
 `;
 
 /**

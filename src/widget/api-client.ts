@@ -158,4 +158,28 @@ export class ApiClient {
 
     return await response.json();
   }
+
+  async deleteFeedback(id: string): Promise<void> {
+    const response = await resilientFetch(this.endpoint, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete feedback: ${response.status}`);
+    }
+  }
+
+  async deleteAllFeedbacks(projectName: string): Promise<void> {
+    const response = await resilientFetch(this.endpoint, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectName, deleteAll: true }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete all feedbacks: ${response.status}`);
+    }
+  }
 }

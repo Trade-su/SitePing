@@ -506,10 +506,12 @@ export function buildStyles(colors: ThemeColors): string {
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 6px;
       margin-top: 10px;
     }
 
-    .sp-btn-resolve {
+    .sp-btn-resolve,
+    .sp-btn-delete {
       padding: 5px 14px;
       border-radius: var(--sp-radius-full);
       border: 1px solid var(--sp-border);
@@ -525,7 +527,8 @@ export function buildStyles(colors: ThemeColors): string {
       transition: all 0.2s ease;
     }
 
-    .sp-btn-resolve svg {
+    .sp-btn-resolve svg,
+    .sp-btn-delete svg {
       width: 14px;
       height: 14px;
     }
@@ -536,10 +539,135 @@ export function buildStyles(colors: ThemeColors): string {
       background: rgba(34, 197, 94, 0.06);
     }
 
-    .sp-btn-resolve:disabled {
+    .sp-btn-delete:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    .sp-btn-resolve:disabled,
+    .sp-btn-delete:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    /* ---- Delete All (header) ---- */
+
+    .sp-panel-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sp-btn-delete-all {
+      padding: 5px 12px;
+      border-radius: var(--sp-radius-full);
+      border: 1px solid var(--sp-border);
+      background: transparent;
+      color: var(--sp-text-tertiary);
+      font-family: var(--sp-font);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .sp-btn-delete-all svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .sp-btn-delete-all:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    .sp-btn-delete-all:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* ---- Confirm Dialog ---- */
+
+    .sp-confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--sp-backdrop, rgba(15, 23, 42, 0.2));
+      backdrop-filter: blur(var(--sp-blur));
+      -webkit-backdrop-filter: blur(var(--sp-blur));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .sp-confirm-dialog {
+      width: 340px;
+      padding: 28px;
+      border-radius: 20px;
+      background: var(--sp-glass-bg-heavy);
+      backdrop-filter: blur(var(--sp-blur-heavy));
+      -webkit-backdrop-filter: blur(var(--sp-blur-heavy));
+      border: 1px solid var(--sp-glass-border);
+      box-shadow: var(--sp-shadow-xl);
+      font-family: var(--sp-font);
+      transform: translateY(8px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sp-confirm-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--sp-text);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .sp-confirm-message {
+      font-size: 14px;
+      color: var(--sp-text-secondary);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .sp-confirm-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .sp-btn-danger {
+      height: 40px;
+      padding: 0 22px;
+      border-radius: var(--sp-radius);
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      font-family: var(--sp-font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    }
+
+    .sp-btn-danger:hover {
+      background: #dc2626;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .sp-btn-danger:active {
+      transform: translateY(0) scale(0.98);
+      transition-duration: 0.1s;
     }
 
     .sp-card--resolved {

@@ -18,6 +18,8 @@ function mockPrisma() {
       update: vi
         .fn()
         .mockResolvedValue({ id: "fb-1", status: "resolved", resolvedAt: new Date().toISOString(), annotations: [] }),
+      delete: vi.fn().mockResolvedValue({ id: "fb-1" }),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       count: vi.fn().mockResolvedValue(0),
     },
   };
@@ -202,6 +204,66 @@ describe("createSitepingHandler", () => {
       });
       const res = await handler.PATCH(req);
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("DELETE", () => {
+    it("deletes a single feedback by id", async () => {
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: JSON.stringify({ id: "fb-1" }),
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(200);
+      expect(prisma.sitepingFeedback.delete).toHaveBeenCalledWith({ where: { id: "fb-1" } });
+    });
+
+    it("deletes all feedbacks for a project", async () => {
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: JSON.stringify({ projectName: "test", deleteAll: true }),
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(200);
+      expect(prisma.sitepingFeedback.deleteMany).toHaveBeenCalledWith({ where: { projectName: "test" } });
+    });
+
+    it("returns 400 for invalid JSON", async () => {
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: "not json",
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 400 for empty body", async () => {
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 404 when feedback not found (P2025)", async () => {
+      prisma.sitepingFeedback.delete.mockRejectedValue({ code: "P2025" });
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: JSON.stringify({ id: "nonexistent" }),
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 500 on unexpected DB error", async () => {
+      prisma.sitepingFeedback.delete.mockRejectedValue(new Error("DB down"));
+      const req = new Request("http://localhost/api/siteping", {
+        method: "DELETE",
+        body: JSON.stringify({ id: "fb-1" }),
+      });
+      const res = await handler.DELETE(req);
+      expect(res.status).toBe(500);
     });
   });
 });

@@ -3,7 +3,7 @@ import type { FeedbackResponse, FeedbackType } from "../types.js";
 import type { ApiClient } from "./api-client.js";
 import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
-import { ICON_CHECK, ICON_CLOSE, ICON_SEARCH, ICON_UNDO } from "./icons.js";
+import { ICON_CHECK, ICON_CLOSE, ICON_SEARCH, ICON_TRASH, ICON_UNDO } from "./icons.js";
 import type { MarkerManager } from "./markers.js";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -24,6 +24,7 @@ export class Panel {
   private root: HTMLElement;
   private listContainer: HTMLElement;
   private searchInput: HTMLInputElement;
+  private deleteAllBtn: HTMLButtonElement;
   private activeFilters = new Set<string>(["all"]);
   private feedbacks: FeedbackResponse[] = [];
   private isOpen = false;
@@ -50,8 +51,21 @@ export class Panel {
     closeBtn.appendChild(parseSvg(ICON_CLOSE));
     closeBtn.addEventListener("click", () => this.close());
 
+    this.deleteAllBtn = document.createElement("button");
+    this.deleteAllBtn.className = "sp-btn-delete-all";
+    this.deleteAllBtn.setAttribute("aria-label", "Tout supprimer");
+    this.deleteAllBtn.appendChild(parseSvg(ICON_TRASH));
+    const deleteAllLabel = document.createElement("span");
+    setText(deleteAllLabel, " Tout supprimer");
+    this.deleteAllBtn.appendChild(deleteAllLabel);
+    this.deleteAllBtn.addEventListener("click", () => this.confirmDeleteAll());
+
+    const headerRight = el("div", { class: "sp-panel-header-right" });
+    headerRight.appendChild(this.deleteAllBtn);
+    headerRight.appendChild(closeBtn);
+
     header.appendChild(title);
-    header.appendChild(closeBtn);
+    header.appendChild(headerRight);
 
     // Filters
     const filters = el("div", { class: "sp-filters" });
@@ -147,6 +161,21 @@ export class Panel {
     this.listContainer.appendChild(loading);
   }
 
+  private showError(): void {
+    this.listContainer.replaceChildren();
+    const empty = el("div", { class: "sp-empty" });
+    const text = el("div", { class: "sp-empty-text" });
+    setText(text, "Erreur de chargement");
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "sp-btn-ghost";
+    retryBtn.style.marginTop = "8px";
+    setText(retryBtn, "Réessayer");
+    retryBtn.addEventListener("click", () => this.loadFeedbacks());
+    empty.appendChild(text);
+    empty.appendChild(retryBtn);
+    this.listContainer.appendChild(empty);
+  }
+
   private async loadFeedbacks(): Promise<void> {
     const search = this.searchInput.value.trim() || undefined;
     const typeFilter = this.activeFilters.has("all") ? undefined : (Array.from(this.activeFilters)[0] as FeedbackType);
@@ -155,7 +184,9 @@ export class Panel {
     if (typeFilter) options.type = typeFilter;
     if (search) options.search = search;
 
-    this.showLoading();
+    // Only show spinner on first load (empty list) — otherwise keep current content visible
+    const hasContent = this.feedbacks.length > 0;
+    if (!hasContent) this.showLoading();
 
     try {
       const { feedbacks } = await this.apiClient.getFeedbacks(this.projectName, options);
@@ -163,6 +194,7 @@ export class Panel {
       this.renderList();
       this.markers.render(feedbacks);
     } catch (error) {
+      if (!hasContent) this.showError();
       this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
     }
   }
@@ -267,7 +299,19 @@ export class Panel {
       await this.toggleResolve(feedback, resolveBtn);
     });
 
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "sp-btn-delete";
+    deleteBtn.appendChild(parseSvg(ICON_TRASH));
+    const deleteLabel = document.createElement("span");
+    setText(deleteLabel, " Supprimer");
+    deleteBtn.appendChild(deleteLabel);
+    deleteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await this.deleteFeedback(feedback, deleteBtn);
+    });
+
     footer.appendChild(resolveBtn);
+    footer.appendChild(deleteBtn);
 
     body.appendChild(header);
     body.appendChild(message);
@@ -292,6 +336,131 @@ export class Panel {
     });
 
     return card;
+  }
+
+  private async deleteFeedback(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
+    btn.disabled = true;
+    try {
+      await this.apiClient.deleteFeedback(feedback.id);
+      this.bus.emit("feedback:deleted", feedback.id);
+      await this.loadFeedbacks();
+    } catch (error) {
+      btn.disabled = false;
+      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  private async confirmDeleteAll(): Promise<void> {
+    const confirmed = await this.showConfirmDialog(
+      "Tout supprimer",
+      "Supprimer tous les feedbacks de ce projet ? Cette action est irréversible.",
+    );
+    if (!confirmed) return;
+
+    this.deleteAllBtn.disabled = true;
+    try {
+      await this.apiClient.deleteAllFeedbacks(this.projectName);
+      this.bus.emit("feedback:all-deleted");
+      await this.loadFeedbacks();
+    } catch (error) {
+      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      this.deleteAllBtn.disabled = false;
+    }
+  }
+
+  private showConfirmDialog(title: string, message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const backdrop = el("div", { class: "sp-confirm-backdrop" });
+
+      const titleId = `sp-confirm-title-${Date.now()}`;
+      const messageId = `sp-confirm-msg-${Date.now()}`;
+
+      const dialog = el("div", { class: "sp-confirm-dialog" });
+      dialog.setAttribute("role", "alertdialog");
+      dialog.setAttribute("aria-modal", "true");
+      dialog.setAttribute("aria-labelledby", titleId);
+      dialog.setAttribute("aria-describedby", messageId);
+
+      const titleEl = el("div", { class: "sp-confirm-title" });
+      titleEl.id = titleId;
+      setText(titleEl, title);
+
+      const messageEl = el("div", { class: "sp-confirm-message" });
+      messageEl.id = messageId;
+      setText(messageEl, message);
+
+      const btnRow = el("div", { class: "sp-confirm-actions" });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "sp-btn-ghost";
+      setText(cancelBtn, "Annuler");
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "sp-btn-danger";
+      setText(confirmBtn, "Supprimer");
+
+      let closed = false;
+      const close = (result: boolean) => {
+        if (closed) return;
+        closed = true;
+        backdrop.removeEventListener("keydown", onKeydown);
+        backdrop.style.opacity = "0";
+        dialog.style.transform = "translateY(8px) scale(0.97)";
+        setTimeout(() => {
+          backdrop.remove();
+          resolve(result);
+        }, 200);
+      };
+
+      // Focus trap: Tab cycles between cancel and confirm
+      const onKeydown = (e: Event) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === "Escape") {
+          close(false);
+          return;
+        }
+        if (ke.key === "Tab") {
+          const focused = dialog.contains((backdrop.getRootNode() as ShadowRoot).activeElement ?? document.activeElement);
+          if (!focused || (backdrop.getRootNode() as ShadowRoot).activeElement === confirmBtn) {
+            ke.preventDefault();
+            cancelBtn.focus();
+          } else if ((backdrop.getRootNode() as ShadowRoot).activeElement === cancelBtn && !ke.shiftKey) {
+            ke.preventDefault();
+            confirmBtn.focus();
+          } else if ((backdrop.getRootNode() as ShadowRoot).activeElement === confirmBtn && ke.shiftKey) {
+            ke.preventDefault();
+            cancelBtn.focus();
+          }
+        }
+      };
+      backdrop.addEventListener("keydown", onKeydown);
+
+      cancelBtn.addEventListener("click", () => close(false));
+      confirmBtn.addEventListener("click", () => close(true));
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) close(false);
+      });
+
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(confirmBtn);
+      dialog.appendChild(titleEl);
+      dialog.appendChild(messageEl);
+      dialog.appendChild(btnRow);
+      backdrop.appendChild(dialog);
+
+      this.root.getRootNode() instanceof ShadowRoot
+        ? (this.root.getRootNode() as ShadowRoot).appendChild(backdrop)
+        : this.root.appendChild(backdrop);
+
+      requestAnimationFrame(() => {
+        backdrop.style.opacity = "1";
+        dialog.style.transform = "translateY(0) scale(1)";
+        cancelBtn.focus();
+      });
+    });
   }
 
   private async toggleResolve(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {

@@ -1,7 +1,7 @@
-import { feedbackCreateSchema, feedbackPatchSchema, formatValidationErrors } from "./validation.js";
+import { feedbackCreateSchema, feedbackDeleteSchema, feedbackPatchSchema, formatValidationErrors } from "./validation.js";
 
 export { SITEPING_MODELS } from "./schema.js";
-export type { FeedbackCreateInput, FeedbackPatchInput } from "./validation.js";
+export type { FeedbackCreateInput, FeedbackDeleteInput, FeedbackPatchInput } from "./validation.js";
 
 interface PrismaClient {
   sitepingFeedback: {
@@ -9,6 +9,8 @@ interface PrismaClient {
     findMany: (args: unknown) => Promise<unknown[]>;
     findUnique: (args: unknown) => Promise<unknown | null>;
     update: (args: unknown) => Promise<unknown>;
+    delete: (args: unknown) => Promise<unknown>;
+    deleteMany: (args: unknown) => Promise<unknown>;
     count: (args: unknown) => Promise<number>;
   };
 }
@@ -27,7 +29,7 @@ const INCLUDE_ANNOTATIONS = { annotations: true };
  * import { createSitepingHandler } from '@neosianexus/siteping/adapter-prisma'
  * import { prisma } from '@/lib/prisma'
  *
- * export const { GET, POST, PATCH } = createSitepingHandler({ prisma })
+ * export const { GET, POST, PATCH, DELETE } = createSitepingHandler({ prisma })
  * ```
  */
 export function createSitepingHandler({ prisma }: HandlerOptions) {
@@ -118,7 +120,7 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
       if (type) where.type = type;
       if (status) where.status = status;
       if (search) {
-        where.message = { contains: search, mode: "insensitive" };
+        where.message = { contains: search };
       }
 
       try {
@@ -167,9 +169,49 @@ export function createSitepingHandler({ prisma }: HandlerOptions) {
         return Response.json({ error: "Internal server error" }, { status: 500 });
       }
     },
+
+    DELETE: async (request: Request): Promise<Response> => {
+      const body = await request.json().catch(() => null);
+      if (!body) {
+        return Response.json({ error: "Invalid JSON" }, { status: 400 });
+      }
+
+      const parsed = feedbackDeleteSchema.safeParse(body);
+      if (!parsed.success) {
+        return Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 });
+      }
+
+      try {
+        if ("deleteAll" in parsed.data) {
+          const result = await prisma.sitepingFeedback.deleteMany({
+            where: { projectName: parsed.data.projectName },
+          });
+          return Response.json({ deleted: result });
+        }
+
+        await prisma.sitepingFeedback.delete({
+          where: { id: parsed.data.id },
+        });
+        return Response.json({ deleted: true });
+      } catch (error) {
+        if (isNotFoundError(error)) {
+          return Response.json({ error: "Feedback not found" }, { status: 404 });
+        }
+        console.error("[siteping] Failed to delete feedback:", error);
+        return Response.json({ error: "Internal server error" }, { status: 500 });
+      }
+    },
   };
 }
 
+function isPrismaError(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === code;
+}
+
 function isDuplicateError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "P2002";
+  return isPrismaError(error, "P2002");
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return isPrismaError(error, "P2025");
 }

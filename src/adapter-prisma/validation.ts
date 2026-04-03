@@ -50,8 +50,14 @@ export const feedbackPatchSchema = z.object({
   status: z.enum(["open", "resolved"]),
 });
 
+export const feedbackDeleteSchema = z.union([
+  z.object({ id: z.string().min(1) }),
+  z.object({ projectName: z.string().min(1), deleteAll: z.literal(true) }),
+]);
+
 export type FeedbackCreateInput = zod.z.infer<typeof feedbackCreateSchema>;
 export type FeedbackPatchInput = zod.z.infer<typeof feedbackPatchSchema>;
+export type FeedbackDeleteInput = zod.z.infer<typeof feedbackDeleteSchema>;
 
 /**
  * Map Zod errors to a flat array of { field, message } objects.

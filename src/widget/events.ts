@@ -44,6 +44,8 @@ export interface WidgetEvents {
   open: [];
   close: [];
   "feedback:sent": [import("../types.js").FeedbackResponse];
+  "feedback:deleted": [string];
+  "feedback:all-deleted": [];
   "feedback:error": [Error];
   "annotation:start": [];
   "annotation:end": [];
