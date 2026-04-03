@@ -118,6 +118,10 @@ const HTML = `<!DOCTYPE html>
     <p>Des questions ? Contactez-nous à <a href="#">support@siteping.dev</a></p>
     <p style="color: #999; margin-top: 40px; text-align: center;">© 2026 Siteping — Tous droits réservés</p>
   </div>
+  <script>
+    // Expose process.env so the widget detects test mode and uses an open Shadow DOM
+    globalThis.process = { env: { NODE_ENV: 'test' } };
+  </script>
   <script type="module">
     import { initSiteping } from '/widget.js';
     const instance = initSiteping({
@@ -125,7 +129,6 @@ const HTML = `<!DOCTYPE html>
       projectName: 'e2e-test',
       forceShow: true,
       accentColor: '#6366f1',
-      __testMode: true,
     });
     window.__siteping = instance;
   </script>
