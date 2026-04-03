@@ -20,7 +20,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder /app/apps/demo/.next/standalone ./
 COPY --from=builder /app/apps/demo/.next/static ./apps/demo/.next/static
-COPY --from=builder /app/apps/demo/public ./apps/demo/public 2>/dev/null || true
 
 USER nextjs
 EXPOSE 3000
