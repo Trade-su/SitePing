@@ -68,7 +68,7 @@ const row2 = Array.from({ length: 4 }, (_, setIdx) =>
 function FrameworkPill({ fw }: { fw: Framework }) {
   return (
     <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-gray-800 bg-gray-900/60 px-4 py-2 text-sm">
-      <svg className={`h-4 w-4 ${fw.color}`} viewBox={fw.viewBox ?? "0 0 24 24"} fill="currentColor" aria-hidden="true">
+      <svg className={`h-4 w-4 ${fw.color}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d={fw.icon} />
       </svg>
       <span className="text-gray-300">{fw.name}</span>
