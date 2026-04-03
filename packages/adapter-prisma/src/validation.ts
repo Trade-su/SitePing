@@ -34,7 +34,7 @@ const annotationSchema = z.object({
 
 export const feedbackCreateSchema = z.object({
   projectName: z.string().min(1),
-  type: z.enum(["question", "changement", "bug", "autre"]),
+  type: z.enum(["question", "change", "bug", "other"]),
   message: z.string().min(1).max(5000),
   url: z.string().url(),
   viewport: z.string().min(1),

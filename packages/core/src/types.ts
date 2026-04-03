@@ -13,6 +13,8 @@ export interface SitepingConfig {
   accentColor?: string;
   /** Show the widget even in production — defaults to false */
   forceShow?: boolean;
+  /** UI locale — defaults to 'fr' for backwards compatibility */
+  locale?: string | undefined;
 
   // Events
   onOpen?: () => void;
@@ -31,7 +33,7 @@ export interface SitepingInstance {
 // Feedback
 // ---------------------------------------------------------------------------
 
-export type FeedbackType = "question" | "changement" | "bug" | "autre";
+export type FeedbackType = "question" | "change" | "bug" | "other";
 export type FeedbackStatus = "open" | "resolved";
 
 export interface FeedbackPayload {

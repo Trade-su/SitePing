@@ -19,14 +19,14 @@ export interface ThemeColors {
   glassBorderSubtle: string;
   // Feedback type colors
   typeQuestion: string;
-  typeChangement: string;
+  typeChange: string;
   typeBug: string;
-  typeAutre: string;
+  typeOther: string;
   // Soft type backgrounds (pastel)
   typeQuestionBg: string;
-  typeChangementBg: string;
+  typeChangeBg: string;
   typeBugBg: string;
-  typeAutreBg: string;
+  typeOtherBg: string;
 }
 
 const DEFAULT_ACCENT = "#0066ff";
@@ -74,14 +74,14 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT): ThemeColors {
     glassBorderSubtle: "rgba(255, 255, 255, 0.18)",
     // Vibrant type colors
     typeQuestion: "#3b82f6",
-    typeChangement: "#f59e0b",
+    typeChange: "#f59e0b",
     typeBug: "#ef4444",
-    typeAutre: "#64748b",
+    typeOther: "#64748b",
     // Pastel backgrounds
     typeQuestionBg: "#eff6ff",
-    typeChangementBg: "#fffbeb",
+    typeChangeBg: "#fffbeb",
     typeBugBg: "#fef2f2",
-    typeAutreBg: "#f8fafc",
+    typeOtherBg: "#f8fafc",
   };
 }
 
@@ -89,12 +89,12 @@ export function getTypeColor(type: string, colors: ThemeColors): string {
   switch (type) {
     case "question":
       return colors.typeQuestion;
-    case "changement":
-      return colors.typeChangement;
+    case "change":
+      return colors.typeChange;
     case "bug":
       return colors.typeBug;
     default:
-      return colors.typeAutre;
+      return colors.typeOther;
   }
 }
 
@@ -102,12 +102,12 @@ export function getTypeBgColor(type: string, colors: ThemeColors): string {
   switch (type) {
     case "question":
       return colors.typeQuestionBg;
-    case "changement":
-      return colors.typeChangementBg;
+    case "change":
+      return colors.typeChangeBg;
     case "bug":
       return colors.typeBugBg;
     default:
-      return colors.typeAutreBg;
+      return colors.typeOtherBg;
   }
 }
 
@@ -130,13 +130,13 @@ export function cssVariables(colors: ThemeColors): string {
     --sp-glass-border: ${colors.glassBorder};
     --sp-glass-border-subtle: ${colors.glassBorderSubtle};
     --sp-type-question: ${colors.typeQuestion};
-    --sp-type-changement: ${colors.typeChangement};
+    --sp-type-change: ${colors.typeChange};
     --sp-type-bug: ${colors.typeBug};
-    --sp-type-autre: ${colors.typeAutre};
+    --sp-type-other: ${colors.typeOther};
     --sp-type-question-bg: ${colors.typeQuestionBg};
-    --sp-type-changement-bg: ${colors.typeChangementBg};
+    --sp-type-change-bg: ${colors.typeChangeBg};
     --sp-type-bug-bg: ${colors.typeBugBg};
-    --sp-type-autre-bg: ${colors.typeAutreBg};
+    --sp-type-other-bg: ${colors.typeOtherBg};
     --sp-radius: 12px;
     --sp-radius-lg: 16px;
     --sp-radius-xl: 20px;
