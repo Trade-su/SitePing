@@ -13,6 +13,7 @@ import {
   getQuerySchema,
 } from "./validation.js";
 
+export type { SitepingStore } from "@siteping/core";
 export { SITEPING_MODELS } from "@siteping/core";
 export type {
   FeedbackCreateInput as FeedbackCreateSchemaInput,
@@ -20,7 +21,6 @@ export type {
   FeedbackPatchInput,
   GetQueryInput,
 } from "./validation.js";
-export type { SitepingStore } from "@siteping/core";
 
 // ---------------------------------------------------------------------------
 // Internal PrismaClient shape — kept private, not exported in .d.ts
@@ -233,7 +233,8 @@ export function createSitepingHandler({ prisma, store: providedStore, apiKey, al
     throw new Error("[siteping] createSitepingHandler requires either `store` or `prisma`.");
   }
 
-  const store: SitepingStore = providedStore ?? new PrismaStore(prisma!);
+  // Safe: the throw above guarantees at least one is defined
+  const store: SitepingStore = providedStore ?? new PrismaStore(prisma as NonNullable<typeof prisma>);
 
   // For clientId dedup lookups we need PrismaStore-specific method
   const prismaStore = store instanceof PrismaStore ? store : null;
@@ -332,18 +333,12 @@ export function createSitepingHandler({ prisma, store: providedStore, apiKey, al
 
       const parsed = getQuerySchema.safeParse(rawQuery);
       if (!parsed.success) {
-        return withCors(
-          Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }),
-          corsHeaders,
-        );
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
       }
 
       try {
         const result = await store.getFeedbacks(parsed.data);
-        return withCors(
-          Response.json(result, { headers: { "Cache-Control": "private, max-age=5" } }),
-          corsHeaders,
-        );
+        return withCors(Response.json(result, { headers: { "Cache-Control": "private, max-age=5" } }), corsHeaders);
       } catch (error) {
         const message = actionableErrorMessage(error);
         console.error("[siteping] Failed to fetch feedbacks:", error);
@@ -363,10 +358,7 @@ export function createSitepingHandler({ prisma, store: providedStore, apiKey, al
 
       const parsed = feedbackPatchSchema.safeParse(body);
       if (!parsed.success) {
-        return withCors(
-          Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }),
-          corsHeaders,
-        );
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
       }
 
       try {
@@ -395,10 +387,7 @@ export function createSitepingHandler({ prisma, store: providedStore, apiKey, al
 
       const parsed = feedbackDeleteSchema.safeParse(body);
       if (!parsed.success) {
-        return withCors(
-          Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }),
-          corsHeaders,
-        );
+        return withCors(Response.json({ errors: formatValidationErrors(parsed.error) }, { status: 400 }), corsHeaders);
       }
 
       try {

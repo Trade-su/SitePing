@@ -79,7 +79,7 @@ describe("syncPrismaModels", () => {
   // -----------------------------------------------------------------------
 
   it("throws when schema file does not exist", () => {
-    expect(() => syncPrismaModels(join(tmpDir, "nonexistent.prisma"))).toThrow("Schema file not found");
+    expect(() => syncPrismaModels(join(tmpDir, "nonexistent.prisma"))).toThrow("Fichier schema introuvable");
   });
 
   // -----------------------------------------------------------------------

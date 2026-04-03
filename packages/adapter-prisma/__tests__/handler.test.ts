@@ -156,13 +156,10 @@ describe("createSitepingHandler", () => {
       expect(res.status).toBe(400);
     });
 
-    it("clamps limit to 100", async () => {
-      prisma.sitepingFeedback.findMany.mockResolvedValue([]);
-      prisma.sitepingFeedback.count.mockResolvedValue(0);
+    it("rejects limit > 100 via Zod validation", async () => {
       const req = new Request("http://localhost/api/siteping?projectName=test&limit=999");
-      await handler.GET(req);
-      const callArgs = prisma.sitepingFeedback.findMany.mock.calls[0][0] as Record<string, unknown>;
-      expect(callArgs.take).toBe(100);
+      const res = await handler.GET(req);
+      expect(res.status).toBe(400);
     });
 
     it("applies type and status filters", async () => {

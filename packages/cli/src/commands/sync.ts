@@ -43,4 +43,3 @@ export function syncCommand(options: { schema?: string }): void {
     process.exit(1);
   }
 }
-

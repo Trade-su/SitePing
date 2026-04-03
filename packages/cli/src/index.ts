@@ -10,20 +10,14 @@ program
   .command("init")
   .description("Configure le schema Prisma et la route API dans votre projet")
   .action(initCommand)
-  .addHelpText(
-    "after",
-    "\n  Examples:\n    $ siteping init\n    $ siteping init --schema prisma/schema.prisma",
-  );
+  .addHelpText("after", "\n  Examples:\n    $ siteping init\n    $ siteping init --schema prisma/schema.prisma");
 
 program
   .command("sync")
   .description("Synchronise le schema Prisma (non-interactif, CI-friendly)")
   .option("--schema <path>", "Chemin vers le fichier schema.prisma")
   .action(syncCommand)
-  .addHelpText(
-    "after",
-    "\n  Examples:\n    $ siteping sync\n    $ siteping sync --schema prisma/schema.prisma",
-  );
+  .addHelpText("after", "\n  Examples:\n    $ siteping sync\n    $ siteping sync --schema prisma/schema.prisma");
 
 program
   .command("status")

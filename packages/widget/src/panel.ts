@@ -253,7 +253,7 @@ export class Panel {
     card.setAttribute("tabindex", "0");
     card.setAttribute(
       "aria-label",
-      `Feedback #${number}: ${TYPE_LABELS[feedback.type] ?? feedback.type} — ${feedback.message.slice(0, 80)}`,
+      `Feedback #${number}: ${getTypeLabel(feedback.type, this.t)} — ${feedback.message.slice(0, 80)}`,
     );
     card.dataset.feedbackId = feedback.id;
 

@@ -92,4 +92,3 @@ export async function initCommand(): Promise<void> {
 
   p.outro("Configuration terminée !");
 }
-

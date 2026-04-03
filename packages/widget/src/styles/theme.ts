@@ -90,14 +90,14 @@ export function buildThemeColors(accent: string = DEFAULT_ACCENT, theme?: "light
       glassBorderSubtle: "rgba(51, 65, 85, 0.3)",
       // Type colors stay vibrant on dark
       typeQuestion: "#60a5fa",
-      typeChangement: "#fbbf24",
+      typeChange: "#fbbf24",
       typeBug: "#f87171",
-      typeAutre: "#94a3b8",
+      typeOther: "#94a3b8",
       // Dark pastel backgrounds
       typeQuestionBg: "rgba(59, 130, 246, 0.15)",
-      typeChangementBg: "rgba(245, 158, 11, 0.15)",
+      typeChangeBg: "rgba(245, 158, 11, 0.15)",
       typeBugBg: "rgba(239, 68, 68, 0.15)",
-      typeAutreBg: "rgba(100, 116, 139, 0.15)",
+      typeOtherBg: "rgba(100, 116, 139, 0.15)",
     };
   }
 
