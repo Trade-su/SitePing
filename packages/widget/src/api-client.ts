@@ -1,5 +1,22 @@
 import type { FeedbackPayload, FeedbackResponse, FeedbackStatus, FeedbackType } from "@siteping/core";
 
+/**
+ * Abstract client interface used by the widget internals.
+ *
+ * `ApiClient` (HTTP mode) and `StoreClient` (direct store mode) both satisfy
+ * this interface, allowing the widget to work identically in either mode.
+ */
+export interface WidgetClient {
+  sendFeedback(payload: FeedbackPayload): Promise<FeedbackResponse>;
+  getFeedbacks(
+    projectName: string,
+    options?: { page?: number; limit?: number; type?: FeedbackType; status?: FeedbackStatus; search?: string },
+  ): Promise<{ feedbacks: FeedbackResponse[]; total: number }>;
+  resolveFeedback(id: string, resolved: boolean): Promise<FeedbackResponse>;
+  deleteFeedback(id: string): Promise<void>;
+  deleteAllFeedbacks(projectName: string): Promise<void>;
+}
+
 const MAX_RETRIES = 3;
 const TIMEOUT_MS = 10_000;
 const RETRY_QUEUE_KEY = "siteping_retry_queue";

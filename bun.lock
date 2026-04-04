@@ -21,6 +21,7 @@
       "name": "@siteping/demo",
       "version": "0.0.0",
       "dependencies": {
+        "@siteping/adapter-memory": "workspace:*",
         "@siteping/adapter-prisma": "workspace:*",
         "@siteping/widget": "workspace:*",
         "gsap": "^3.14.2",
@@ -34,6 +35,20 @@
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         "tailwindcss": "^4.0.0",
+      },
+    },
+    "packages/adapter-localstorage": {
+      "name": "@siteping/adapter-localstorage",
+      "version": "0.4.2",
+      "devDependencies": {
+        "@siteping/core": "workspace:*",
+      },
+    },
+    "packages/adapter-memory": {
+      "name": "@siteping/adapter-memory",
+      "version": "0.4.2",
+      "devDependencies": {
+        "@siteping/core": "workspace:*",
       },
     },
     "packages/adapter-prisma": {
@@ -375,6 +390,10 @@
     "@rushstack/terminal": ["@rushstack/terminal@0.22.4", "", { "dependencies": { "@rushstack/node-core-library": "5.21.0", "@rushstack/problem-matcher": "0.2.1", "supports-color": "~8.1.1" }, "peerDependencies": { "@types/node": "*" }, "optionalPeers": ["@types/node"] }, "sha512-fhtLjnXCc/4WleVbVl6aoc7jcWnU6yqjS1S8WoaNREG3ycu/viZ9R/9QM7Y/b4CDvcXoiDyMNIay7JMwBptM3g=="],
 
     "@rushstack/ts-command-line": ["@rushstack/ts-command-line@5.3.4", "", { "dependencies": { "@rushstack/terminal": "0.22.4", "@types/argparse": "1.0.38", "argparse": "~1.0.9", "string-argv": "~0.3.1" } }, "sha512-MLkVKVEN6/2clKTrjN2B2KqKCuPxRwnNsWY7a+FCAq2EMdkj10cM8YgiBSMeGFfzM0mDMzargpHNnNzaBi9Whg=="],
+
+    "@siteping/adapter-localstorage": ["@siteping/adapter-localstorage@workspace:packages/adapter-localstorage"],
+
+    "@siteping/adapter-memory": ["@siteping/adapter-memory@workspace:packages/adapter-memory"],
 
     "@siteping/adapter-prisma": ["@siteping/adapter-prisma@workspace:packages/adapter-prisma"],
 

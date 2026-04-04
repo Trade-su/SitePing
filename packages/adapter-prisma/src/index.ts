@@ -1,10 +1,13 @@
 import { timingSafeEqual } from "node:crypto";
-import type {
-  FeedbackCreateInput,
-  FeedbackQuery,
-  FeedbackRecord,
-  FeedbackUpdateInput,
-  SitepingStore,
+import {
+  type FeedbackCreateInput,
+  type FeedbackQuery,
+  type FeedbackRecord,
+  type FeedbackUpdateInput,
+  flattenAnnotation,
+  isStoreDuplicate,
+  isStoreNotFound,
+  type SitepingStore,
 } from "@siteping/core";
 import {
   feedbackCreateSchema,
@@ -15,6 +18,7 @@ import {
 } from "./validation.js";
 
 export type { SitepingStore } from "@siteping/core";
+export { flattenAnnotation, StoreDuplicateError, StoreNotFoundError } from "@siteping/core";
 export type {
   FeedbackCreateInput as FeedbackCreateSchemaInput,
   FeedbackDeleteInput,
@@ -355,32 +359,13 @@ export function createSitepingHandler({
           authorName: data.authorName,
           authorEmail: data.authorEmail,
           clientId: data.clientId,
-          annotations: data.annotations.map((ann) => ({
-            cssSelector: ann.anchor.cssSelector,
-            xpath: ann.anchor.xpath,
-            textSnippet: ann.anchor.textSnippet,
-            elementTag: ann.anchor.elementTag,
-            elementId: ann.anchor.elementId,
-            textPrefix: ann.anchor.textPrefix,
-            textSuffix: ann.anchor.textSuffix,
-            fingerprint: ann.anchor.fingerprint,
-            neighborText: ann.anchor.neighborText,
-            xPct: ann.rect.xPct,
-            yPct: ann.rect.yPct,
-            wPct: ann.rect.wPct,
-            hPct: ann.rect.hPct,
-            scrollX: ann.scrollX,
-            scrollY: ann.scrollY,
-            viewportW: ann.viewportW,
-            viewportH: ann.viewportH,
-            devicePixelRatio: ann.devicePixelRatio,
-          })),
+          annotations: data.annotations.map(flattenAnnotation),
         });
 
         return withCors(Response.json(feedback, { status: 201 }), corsHeaders);
       } catch (error) {
         // Handle unique constraint violation (clientId dedup)
-        if (isDuplicateError(error)) {
+        if (isStoreDuplicate(error)) {
           const existing = await store.findByClientId(data.clientId);
           if (existing) return withCors(Response.json(existing, { status: 201 }), corsHeaders);
         }
@@ -447,7 +432,7 @@ export function createSitepingHandler({
 
         return withCors(Response.json(feedback), corsHeaders);
       } catch (error) {
-        if (isNotFoundError(error)) {
+        if (isStoreNotFound(error)) {
           return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
         }
         const message = actionableErrorMessage(error);
@@ -491,7 +476,7 @@ export function createSitepingHandler({
         await store.deleteFeedback(parsed.data.id);
         return withCors(Response.json({ deleted: true }), corsHeaders);
       } catch (error) {
-        if (isNotFoundError(error)) {
+        if (isStoreNotFound(error)) {
           return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
         }
         const message = actionableErrorMessage(error);
@@ -502,20 +487,8 @@ export function createSitepingHandler({
   };
 }
 
-function isPrismaError(error: unknown, code: string): error is { code: string } {
-  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === code;
-}
-
-function isDuplicateError(error: unknown): error is { code: string } {
-  return isPrismaError(error, "P2002");
-}
-
-function isNotFoundError(error: unknown): error is { code: string } {
-  return isPrismaError(error, "P2025");
-}
-
-function isTableNotFoundError(error: unknown): error is { code: string } {
-  return isPrismaError(error, "P2021");
+function isTableNotFoundError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "P2021";
 }
 
 /**

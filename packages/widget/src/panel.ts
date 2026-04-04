@@ -1,5 +1,5 @@
 import type { FeedbackResponse, FeedbackType } from "@siteping/core";
-import type { ApiClient } from "./api-client.js";
+import type { WidgetClient } from "./api-client.js";
 import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { getTypeLabel, type TFunction } from "./i18n/index.js";
@@ -30,7 +30,7 @@ export class Panel {
     shadowRoot: ShadowRoot,
     private readonly colors: ThemeColors,
     private readonly bus: EventBus<WidgetEvents>,
-    private readonly apiClient: ApiClient,
+    private readonly client: WidgetClient,
     private readonly projectName: string,
     private readonly markers: MarkerManager,
     private readonly t: TFunction,
@@ -325,7 +325,7 @@ export class Panel {
     if (!hasContent) this.showLoading();
 
     try {
-      const { feedbacks } = await this.apiClient.getFeedbacks(this.projectName, options);
+      const { feedbacks } = await this.client.getFeedbacks(this.projectName, options);
       if (signal.aborted) return; // Stale response — a newer request superseded this one
       this.feedbacks = feedbacks;
       this.renderList();
@@ -462,7 +462,7 @@ export class Panel {
   private async deleteFeedback(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
     btn.disabled = true;
     try {
-      await this.apiClient.deleteFeedback(feedback.id);
+      await this.client.deleteFeedback(feedback.id);
       this.bus.emit("feedback:deleted", feedback.id);
       await this.loadFeedbacks();
     } catch (error) {
@@ -480,7 +480,7 @@ export class Panel {
 
     this.deleteAllBtn.disabled = true;
     try {
-      await this.apiClient.deleteAllFeedbacks(this.projectName);
+      await this.client.deleteAllFeedbacks(this.projectName);
       this.bus.emit("feedback:all-deleted");
       await this.loadFeedbacks();
     } catch (error) {
@@ -585,7 +585,7 @@ export class Panel {
     btn.disabled = true;
     try {
       const newResolved = feedback.status !== "resolved";
-      await this.apiClient.resolveFeedback(feedback.id, newResolved);
+      await this.client.resolveFeedback(feedback.id, newResolved);
       await this.loadFeedbacks();
     } catch (error) {
       btn.disabled = false;

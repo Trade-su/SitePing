@@ -13,6 +13,7 @@ export type {
   SitepingConfig,
   SitepingInstance,
   SitepingPublicEvents,
+  SitepingStore,
 } from "@siteping/core";
 
 export type { Identity } from "./identity.js";

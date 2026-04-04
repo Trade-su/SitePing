@@ -1,12 +1,13 @@
 import type { FeedbackPayload, SitepingConfig, SitepingInstance, SitepingPublicEvents } from "@siteping/core";
 import { Annotator } from "./annotator.js";
-import { ApiClient, flushRetryQueue } from "./api-client.js";
+import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
 import { EventBus, type PublicWidgetEvents, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
 import { createT, type TFunction } from "./i18n/index.js";
 import { getIdentity, type Identity, saveIdentity } from "./identity.js";
 import { MarkerManager } from "./markers.js";
 import { Panel } from "./panel.js";
+import { StoreClient } from "./store-client.js";
 import { buildStyles } from "./styles/base.js";
 import { buildThemeColors } from "./styles/theme.js";
 import { Tooltip } from "./tooltip.js";
@@ -73,8 +74,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
   }
 
   // Guard: validate required config fields
-  if (!config.endpoint || typeof config.endpoint !== "string") {
-    console.error("[siteping] Missing or invalid 'endpoint' in config. Expected a string like '/api/siteping'.");
+  if (!config.store && (!config.endpoint || typeof config.endpoint !== "string")) {
+    console.error(
+      "[siteping] Missing 'endpoint' or 'store' in config. Provide an endpoint like '/api/siteping' or a SitepingStore instance.",
+    );
     return skippedInstance();
   }
   if (!config.projectName || typeof config.projectName !== "string") {
@@ -90,7 +93,11 @@ export function launch(config: SitepingConfig): SitepingInstance {
   const colors = buildThemeColors(config.accentColor, config.theme);
   const bus = new EventBus<WidgetEvents>();
   const publicBus = new EventBus<PublicWidgetEvents>();
-  const apiClient = new ApiClient(config.endpoint, config.projectName);
+
+  // Client-side mode (store) vs HTTP mode (endpoint)
+  const client: WidgetClient = config.store
+    ? new StoreClient(config.store, config.projectName)
+    : new ApiClient(config.endpoint as string, config.projectName);
 
   // Wire config callbacks to event bus
   if (config.onOpen) bus.on("open", config.onOpen);
@@ -163,7 +170,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   // Components inside Shadow DOM
   const fab = new Fab(shadow, config, bus, t);
-  const panel = new Panel(shadow, colors, bus, apiClient, config.projectName, markers, t, locale);
+  const panel = new Panel(shadow, colors, bus, client, config.projectName, markers, t, locale);
   const annotator = new Annotator(colors, bus, t);
 
   // Handle annotation completion via event bus (not DOM events)
@@ -215,7 +222,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
       };
 
       try {
-        const response = await apiClient.sendFeedback(payload);
+        const response = await client.sendFeedback(payload);
         bus.emit("feedback:sent", response);
         markers.addFeedback(response, markers.count + 1);
         liveRegion.textContent = t("feedback.sent.confirmation");
@@ -230,7 +237,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
   });
 
   // Load markers immediately on page load
-  apiClient
+  client
     .getFeedbacks(config.projectName, { limit: 50 })
     .then(({ feedbacks }) => {
       markers.render(feedbacks);
@@ -239,10 +246,12 @@ export function launch(config: SitepingConfig): SitepingInstance {
       log("Failed to load initial markers:", err);
     });
 
-  // Flush retry queue on load
-  flushRetryQueue(config.endpoint)
-    .then(() => log("Retry queue flushed"))
-    .catch(() => {});
+  // Flush retry queue on load (HTTP mode only — store mode has no retry queue)
+  if (config.endpoint) {
+    flushRetryQueue(config.endpoint)
+      .then(() => log("Retry queue flushed"))
+      .catch(() => {});
+  }
 
   instance = {
     destroy: () => {
