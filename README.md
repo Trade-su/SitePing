@@ -7,6 +7,8 @@
 A lightweight feedback widget that lets your clients annotate websites during development.
 Draw rectangles, leave comments, track bugs — directly on the live site.
 
+![Demo](./demo.gif)
+
 [![Website](https://img.shields.io/badge/website-siteping.dev-000000?style=flat&colorA=000000&colorB=000000)](https://siteping.dev)
 [![Live Demo](https://img.shields.io/badge/demo-try%20it%20live-22c55e?style=flat&colorA=000000)](https://siteping.dev/demo)
 [![npm version](https://img.shields.io/npm/v/@siteping/widget?style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@siteping/widget)
