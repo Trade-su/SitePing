@@ -5,10 +5,31 @@
   "description": "Shared types and schema definitions for @siteping packages",
   "type": "module",
   "sideEffects": false,
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
   },
   "author": "neosianexus",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://siteping.dev",
+  "bugs": {
+    "url": "https://github.com/NeosiaNexus/SitePing/issues"
+  },
+  "keywords": [
+    "siteping",
+    "types",
+    "schema",
+    "feedback"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

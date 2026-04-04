@@ -10,6 +10,7 @@
  * The CLI generates the actual Prisma schema from this definition.
  */
 
+/** Definition of a single field in a Siteping database model. */
 export interface FieldDef {
   type: string;
   default?: string;
@@ -23,24 +24,30 @@ export interface FieldDef {
   };
   isId?: boolean;
   isUnique?: boolean;
+  /** Prisma native type attribute (e.g. "Text" for @db.Text) — used for MySQL compatibility on long strings */
+  nativeType?: string;
+  /** Prisma @updatedAt attribute */
+  isUpdatedAt?: boolean;
 }
 
+/** Definition of a composite index on a Siteping database model. */
 export interface IndexDef {
   fields: string[];
 }
 
-interface ModelDef {
+/** Definition of a single Siteping database model (fields + indexes). */
+export interface ModelDef {
   fields: Record<string, FieldDef>;
   indexes?: IndexDef[];
 }
 
-export const SITEPING_MODELS: Record<string, ModelDef> = {
+const _SITEPING_MODELS = {
   SitepingFeedback: {
     fields: {
       id: { type: "String", isId: true, default: "cuid()" },
       projectName: { type: "String" },
       type: { type: "String" },
-      message: { type: "String" },
+      message: { type: "String", nativeType: "Text" },
       status: { type: "String", default: '"open"' },
       url: { type: "String" },
       viewport: { type: "String" },
@@ -50,12 +57,13 @@ export const SITEPING_MODELS: Record<string, ModelDef> = {
       clientId: { type: "String", isUnique: true },
       resolvedAt: { type: "DateTime", optional: true },
       createdAt: { type: "DateTime", default: "now()" },
+      updatedAt: { type: "DateTime", isUpdatedAt: true },
       annotations: {
         type: "SitepingAnnotation",
         relation: { kind: "1-to-many", model: "SitepingAnnotation" },
       },
     },
-    indexes: [{ fields: ["projectName"] }],
+    indexes: [{ fields: ["projectName"] }, { fields: ["projectName", "status", "createdAt"] }],
   },
   SitepingAnnotation: {
     fields: {
@@ -71,15 +79,15 @@ export const SITEPING_MODELS: Record<string, ModelDef> = {
           onDelete: "Cascade",
         },
       },
-      cssSelector: { type: "String" },
-      xpath: { type: "String" },
-      textSnippet: { type: "String" },
+      cssSelector: { type: "String", nativeType: "Text" },
+      xpath: { type: "String", nativeType: "Text" },
+      textSnippet: { type: "String", nativeType: "Text" },
       elementTag: { type: "String" },
       elementId: { type: "String", optional: true },
-      textPrefix: { type: "String" },
-      textSuffix: { type: "String" },
+      textPrefix: { type: "String", nativeType: "Text" },
+      textSuffix: { type: "String", nativeType: "Text" },
       fingerprint: { type: "String" },
-      neighborText: { type: "String" },
+      neighborText: { type: "String", nativeType: "Text" },
       xPct: { type: "Float" },
       yPct: { type: "Float" },
       wPct: { type: "Float" },
@@ -93,4 +101,6 @@ export const SITEPING_MODELS: Record<string, ModelDef> = {
     },
     indexes: [{ fields: ["feedbackId"] }],
   },
-};
+} as const satisfies Record<string, ModelDef>;
+
+export const SITEPING_MODELS = Object.freeze(_SITEPING_MODELS);
