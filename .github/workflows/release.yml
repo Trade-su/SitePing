@@ -33,6 +33,8 @@ jobs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       widget-release_created: ${{ steps.release.outputs['packages/widget--release_created'] }}
       adapter-release_created: ${{ steps.release.outputs['packages/adapter-prisma--release_created'] }}
+      adapter-memory-release_created: ${{ steps.release.outputs['packages/adapter-memory--release_created'] }}
+      adapter-localstorage-release_created: ${{ steps.release.outputs['packages/adapter-localstorage--release_created'] }}
       cli-release_created: ${{ steps.release.outputs['packages/cli--release_created'] }}
     steps:
       - uses: googleapis/release-please-action@v4
@@ -68,6 +70,8 @@ jobs:
           path: |
             packages/widget/dist/
             packages/adapter-prisma/dist/
+            packages/adapter-memory/dist/
+            packages/adapter-localstorage/dist/
             packages/cli/dist/
           retention-days: 1
 
@@ -176,5 +180,77 @@ jobs:
       - name: Publish @siteping/cli
         run: npm publish --access public --provenance
         working-directory: packages/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-adapter-memory:
+    needs: [release-please, build]
+    if: |
+      !failure() && !cancelled() &&
+      (needs.release-please.outputs.adapter-memory-release_created == 'true' ||
+       (github.event_name == 'workflow_dispatch' && inputs.publish))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.11"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: packages/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish @siteping/adapter-memory
+        run: npm publish --access public --provenance
+        working-directory: packages/adapter-memory
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-adapter-localstorage:
+    needs: [release-please, build]
+    if: |
+      !failure() && !cancelled() &&
+      (needs.release-please.outputs.adapter-localstorage-release_created == 'true' ||
+       (github.event_name == 'workflow_dispatch' && inputs.publish))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.11"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: packages/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish @siteping/adapter-localstorage
+        run: npm publish --access public --provenance
+        working-directory: packages/adapter-localstorage
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

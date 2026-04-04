@@ -65,6 +65,8 @@ npx @siteping/cli doctor --url http://localhost:3000
 |---------|-------------|
 | [`@siteping/widget`](https://www.npmjs.com/package/@siteping/widget) | Browser feedback widget |
 | [`@siteping/adapter-prisma`](https://www.npmjs.com/package/@siteping/adapter-prisma) | Server-side Prisma adapter |
+| [`@siteping/adapter-memory`](https://www.npmjs.com/package/@siteping/adapter-memory) | In-memory adapter (testing, demos) |
+| [`@siteping/adapter-localstorage`](https://www.npmjs.com/package/@siteping/adapter-localstorage) | Client-side localStorage adapter |
 
 ## License
 

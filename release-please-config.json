@@ -28,6 +28,16 @@
       "component": "adapter-prisma",
       "bump-minor-pre-major": true
     },
+    "packages/adapter-memory": {
+      "release-type": "node",
+      "component": "adapter-memory",
+      "bump-minor-pre-major": true
+    },
+    "packages/adapter-localstorage": {
+      "release-type": "node",
+      "component": "adapter-localstorage",
+      "bump-minor-pre-major": true
+    },
     "packages/cli": {
       "release-type": "node",
       "component": "cli",

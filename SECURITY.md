@@ -45,4 +45,6 @@ This policy applies to all packages in the `@siteping/*` scope:
 
 - `@siteping/widget`
 - `@siteping/adapter-prisma`
+- `@siteping/adapter-memory`
+- `@siteping/adapter-localstorage`
 - `@siteping/cli`

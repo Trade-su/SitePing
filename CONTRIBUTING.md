@@ -217,7 +217,7 @@ export { StoreNotFoundError, StoreDuplicateError } from '@siteping/core'
 - **TypeScript strict mode** with `exactOptionalPropertyTypes` enabled.
 - **Conventional Commits** for all commit messages: `type(scope): description`.
   - Examples: `feat(widget): add color picker`, `fix(cli): handle missing config`.
-- **French UI labels** in the widget — the target audience is French-speaking freelance clients.
+- **i18n** — English (default) and French locales. Target audience is French-speaking freelance clients.
 - Keep functions small and focused. Prefer composition over inheritance.
 
 ## Testing
@@ -239,16 +239,16 @@ Releases are **fully automated** via [Release Please](https://github.com/googlea
 
 **Version bumps are determined by your commit messages:**
 
-| Commit prefix | Version bump | Example |
-|--------------|-------------|---------|
-| `fix(scope):` | Patch (0.2.2 → 0.2.3) | `fix(widget): prevent double submit` |
-| `feat(scope):` | Minor (0.2.2 → 0.3.0) | `feat(panel): add dark mode` |
-| `feat(scope)!:` | Major (0.3.0 → 1.0.0) | `feat(api)!: redesign payload format` |
-| `docs:` / `test:` / `chore:` | Patch | `docs(widget): clarify config` |
+| Commit prefix | Version bump (1.0+) | Pre-1.0 bump | Example |
+|--------------|---------------------|-------------|---------|
+| `fix(scope):` | Patch | Patch | `fix(widget): prevent double submit` |
+| `feat(scope):` | Minor | Patch | `feat(panel): add dark mode` |
+| `feat(scope)!:` | Major | Minor | `feat(api)!: redesign payload format` |
+| `docs:` / `test:` / `chore:` | — (included in next release) | — | `docs(widget): clarify config` |
 
 > **Note:** The commit scope (`widget`, `cli`) is cosmetic. Release-please routes commits to packages based on which **files** the commit touches, not the scope name.
 
-> While the version is < 1.0.0, breaking changes bump minor instead of major.
+> **Pre-1.0 behavior** (all current packages): `feat` bumps **patch** instead of minor, breaking changes (`!`) bump **minor** instead of major. `docs` / `test` / `chore` commits don't trigger releases on their own — they're included in the next release triggered by `feat` or `fix`.
 
 **What you don't need to do:**
 - Edit `package.json` version — Release Please does it

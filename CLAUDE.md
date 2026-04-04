@@ -27,4 +27,4 @@
 ## Code Style
 - TypeScript strict mode with exactOptionalPropertyTypes
 - Conventional Commits: `type(scope): description`
-- French UI labels in widget (target audience: French freelance clients)
+- i18n: English (default) and French locales — target audience is French freelance clients

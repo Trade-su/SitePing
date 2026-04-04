@@ -54,7 +54,7 @@ Stop chasing client feedback across Slack threads, email chains, and Notion docs
 - **Zero config auth** — Clients identify once (name + email), persisted locally
 - **Full event system** — `onOpen`, `onClose`, `onFeedbackSent`, `onError`, `onAnnotationStart`, `onAnnotationEnd`
 - **CLI scaffold** — `npx @siteping/cli init` sets up Prisma schema + API route
-- **Monorepo** — Split into independent packages (`widget`, `adapter-prisma`, `cli`)
+- **Monorepo** — Split into independent packages (`widget`, `adapter-prisma`, `adapter-memory`, `adapter-localstorage`, `cli`)
 - **Dev-only by default** — Widget auto-hides in production unless `forceShow: true`
 - **Lightweight** — ~23KB gzipped
 
@@ -375,7 +375,7 @@ bun run check
 | Suite | Tests | What it covers |
 |-------|-------|----------------|
 | Unit (Vitest) | 780+ | Zod validation, API handlers, store conformance, adapter tests, EventBus, API client retry, identity persistence, theme normalization, DOM anchoring, resolver, fuzzy matching, fingerprinting, XPath, text context, i18n |
-| E2E (Playwright) | 17 | Full browser: widget injection, FAB, panel, annotation draw, popup submit, marker creation, API persistence, cleanup |
+| E2E (Playwright) | 29 | Full browser: widget injection, FAB, panel, annotation draw, popup submit, marker creation, API persistence, i18n, search, touch, event delegation, cleanup |
 
 ---
 
