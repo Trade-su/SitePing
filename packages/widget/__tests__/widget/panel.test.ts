@@ -553,7 +553,6 @@ describe("Panel", () => {
 
       await vi.waitFor(() => {
         expect(apiClient.deleteFeedback).toHaveBeenCalledWith("fb-1");
-        expect(apiClient.getFeedbacks).toHaveBeenCalled();
       });
     });
 
@@ -589,31 +588,33 @@ describe("Panel", () => {
       expect(expandBtn.getAttribute("aria-expanded")).toBe("false");
     });
 
-    it("clicking a card with annotations scrolls to annotation position", async () => {
+    it("clicking a card opens the detail view", async () => {
       const fb = makeFeedback({ id: "fb-1", annotations: [annotation] });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
       await panel.open();
 
-      const scrollSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
       const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
       card.click();
 
-      expect(scrollSpy).toHaveBeenCalledWith({ left: 100, top: 200, behavior: "smooth" });
-      scrollSpy.mockRestore();
+      const detail = shadow.querySelector<HTMLElement>(".sp-detail");
+      expect(detail).not.toBeNull();
+      expect(detail!.classList.contains("sp-detail--visible")).toBe(true);
+      expect(detail!.getAttribute("aria-hidden")).toBe("false");
     });
 
-    it("clicking a card with annotations calls markers.pinHighlight", async () => {
-      const fb = makeFeedback({ id: "fb-1", annotations: [annotation] });
+    it("clicking a card shows the correct feedback in detail view", async () => {
+      const fb = makeFeedback({ id: "fb-1", message: "Test bug report", annotations: [annotation] });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
       await panel.open();
 
-      vi.spyOn(window, "scrollTo").mockImplementation(() => {});
       const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
       card.click();
 
-      expect(markers.pinHighlight).toHaveBeenCalledWith(expect.objectContaining({ id: "fb-1" }));
+      const detail = shadow.querySelector<HTMLElement>(".sp-detail");
+      expect(detail).not.toBeNull();
+      expect(detail!.textContent).toContain("Test bug report");
     });
   });
 
@@ -646,13 +647,12 @@ describe("Panel", () => {
       createdAt: new Date().toISOString(),
     };
 
-    it("Enter key on card triggers scroll + pinHighlight", async () => {
+    it("Enter key on card opens detail view", async () => {
       const fb = makeFeedback({ id: "fb-1", annotations: [annotation] });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
       await panel.open();
 
-      const scrollSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
       const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
       const listContainer = shadow.querySelector<HTMLElement>('[role="list"]')!;
 
@@ -661,18 +661,17 @@ describe("Panel", () => {
       Object.defineProperty(event, "target", { value: card });
       listContainer.dispatchEvent(event);
 
-      expect(scrollSpy).toHaveBeenCalledWith({ left: 50, top: 150, behavior: "smooth" });
-      expect(markers.pinHighlight).toHaveBeenCalledWith(expect.objectContaining({ id: "fb-1" }));
-      scrollSpy.mockRestore();
+      const detail = shadow.querySelector<HTMLElement>(".sp-detail");
+      expect(detail).not.toBeNull();
+      expect(detail!.classList.contains("sp-detail--visible")).toBe(true);
     });
 
-    it("Space key on card triggers scroll + pinHighlight", async () => {
+    it("Space key on card opens detail view", async () => {
       const fb = makeFeedback({ id: "fb-1", annotations: [annotation] });
       apiClient.getFeedbacks.mockResolvedValue({ feedbacks: [fb], total: 1 });
 
       await panel.open();
 
-      const scrollSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
       const card = shadow.querySelector<HTMLElement>('[data-feedback-id="fb-1"]')!;
       const listContainer = shadow.querySelector<HTMLElement>('[role="list"]')!;
 
@@ -680,9 +679,9 @@ describe("Panel", () => {
       Object.defineProperty(event, "target", { value: card });
       listContainer.dispatchEvent(event);
 
-      expect(scrollSpy).toHaveBeenCalledWith({ left: 50, top: 150, behavior: "smooth" });
-      expect(markers.pinHighlight).toHaveBeenCalledWith(expect.objectContaining({ id: "fb-1" }));
-      scrollSpy.mockRestore();
+      const detail = shadow.querySelector<HTMLElement>(".sp-detail");
+      expect(detail).not.toBeNull();
+      expect(detail!.classList.contains("sp-detail--visible")).toBe(true);
     });
 
     it("Enter on a button inside card does NOT trigger card scroll", async () => {

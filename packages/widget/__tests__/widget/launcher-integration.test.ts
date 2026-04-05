@@ -261,8 +261,8 @@ describe("launcher — annotation:complete integration", () => {
       // No identity modal should appear — identity was stored
       const widget = document.querySelector("siteping-widget");
       const shadow = widget?.shadowRoot;
-      // If there's a dialog it's the identity modal
-      const modal = shadow?.querySelector('[role="dialog"]') ?? null;
+      // Check for identity modal specifically (exclude DetailView's .sp-detail dialog)
+      const modal = shadow?.querySelector('[role="dialog"]:not(.sp-detail):not(.sp-shortcuts-overlay)') ?? null;
       expect(modal).toBeNull();
 
       instance.destroy();

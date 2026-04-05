@@ -1,4 +1,10 @@
 import { Z_INDEX_MAX } from "../constants.js";
+import { EXPORT_CSS } from "../export-utils.js";
+import { BULK_CSS } from "../panel-bulk.js";
+import { DETAIL_CSS } from "../panel-detail.js";
+import { SORT_CSS } from "../panel-sort.js";
+import { STATS_CSS } from "../panel-stats.js";
+import { SHORTCUTS_CSS } from "../shortcuts.js";
 import { ANIMATION_CSS } from "./animations.js";
 import { cssVariables, type ThemeColors } from "./theme.js";
 
@@ -352,6 +358,11 @@ export function buildStyles(colors: ThemeColors): string {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .sp-chips:last-child {
+      margin-bottom: 0;
     }
 
     .sp-chip {
@@ -423,6 +434,7 @@ export function buildStyles(colors: ThemeColors): string {
       border-radius: var(--sp-radius);
       background: var(--sp-glass-bg-heavy);
       border: 1px solid var(--sp-glass-border);
+      box-shadow: var(--sp-shadow-xs);
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -892,5 +904,11 @@ export function buildStyles(colors: ThemeColors): string {
     }
 
     ${ANIMATION_CSS}
+    ${STATS_CSS}
+    ${SORT_CSS}
+    ${BULK_CSS}
+    ${EXPORT_CSS}
+    ${SHORTCUTS_CSS}
+    ${DETAIL_CSS}
   `;
 }

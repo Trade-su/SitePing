@@ -3,13 +3,26 @@ import type { WidgetClient } from "./api-client.js";
 import { PAGE_SIZE } from "./constants.js";
 import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
+import { EXPORT_I18N_FR, ExportButton } from "./export-utils.js";
 import { getTypeLabel, type TFunction } from "./i18n/index.js";
 import { ICON_CHECK, ICON_CLOSE, ICON_SEARCH, ICON_TRASH, ICON_UNDO } from "./icons.js";
 import type { MarkerManager } from "./markers.js";
+import { BULK_I18N_EN, BULK_I18N_FR, BulkActions } from "./panel-bulk.js";
+import { DetailView } from "./panel-detail.js";
+import { createPageGroupHeader, groupFeedbacksByPage, PanelSortControls, sortFeedbacks } from "./panel-sort.js";
+import { PanelStats } from "./panel-stats.js";
+import {
+  focusCardByIndex,
+  getFocusedCardIndex,
+  KeyboardShortcuts,
+  SHORTCUTS_I18N_EN,
+  SHORTCUTS_I18N_FR,
+} from "./shortcuts.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
 
 /**
- * Side panel (400px) with feedback history, filters, and search.
+ * Side panel (400px) with feedback history, filters, search, stats,
+ * sort/group, bulk actions, export, detail view, and keyboard shortcuts.
  *
  * Lives inside the Shadow DOM.
  * Glassmorphism: glass background, staggered card animations,
@@ -33,6 +46,18 @@ export class Panel {
   /** Tracks feedback IDs with in-flight mutations to prevent spam-click race conditions */
   private pendingMutations = new Set<string>();
 
+  // New feature modules
+  private readonly stats: PanelStats;
+  private readonly sortControls: PanelSortControls;
+  private readonly bulk: BulkActions;
+  private readonly exportBtn: ExportButton;
+  private readonly shortcuts: KeyboardShortcuts;
+  private readonly detail: DetailView;
+  private readonly shadowRoot: ShadowRoot;
+
+  // i18n helpers
+  private readonly bulkI18n: typeof BULK_I18N_EN;
+
   constructor(
     shadowRoot: ShadowRoot,
     private readonly colors: ThemeColors,
@@ -43,12 +68,15 @@ export class Panel {
     private readonly t: TFunction,
     private readonly locale: string,
   ) {
+    this.shadowRoot = shadowRoot;
+    this.bulkI18n = locale === "fr" ? BULK_I18N_FR : BULK_I18N_EN;
+
     this.root = el("div", { class: "sp-panel" });
     this.root.setAttribute("role", "complementary");
     this.root.setAttribute("aria-label", this.t("panel.ariaLabel"));
     this.root.setAttribute("aria-hidden", "true");
 
-    // Header
+    // --- Header ---
     const header = el("div", { class: "sp-panel-header" });
     const title = el("span", { class: "sp-panel-title" });
     setText(title, this.t("panel.title"));
@@ -68,14 +96,22 @@ export class Panel {
     this.deleteAllBtn.appendChild(deleteAllLabel);
     this.deleteAllBtn.addEventListener("click", () => this.confirmDeleteAll());
 
+    // Export button
+    this.exportBtn = new ExportButton(colors, () => this.feedbacks);
+    if (locale === "fr") this.exportBtn.setLabels(EXPORT_I18N_FR);
+
     const headerRight = el("div", { class: "sp-panel-header-right" });
+    headerRight.appendChild(this.exportBtn.element);
     headerRight.appendChild(this.deleteAllBtn);
     headerRight.appendChild(this.closeBtn);
 
     header.appendChild(title);
     header.appendChild(headerRight);
 
-    // Filters
+    // --- Stats ---
+    this.stats = new PanelStats(colors, locale);
+
+    // --- Filters ---
     const filters = el("div", { class: "sp-filters" });
 
     // Search
@@ -94,7 +130,7 @@ export class Panel {
     searchWrap.appendChild(searchIcon);
     searchWrap.appendChild(this.searchInput);
 
-    // Chips
+    // Type chips
     const chips = el("div", { class: "sp-chips" });
     const chipOptions = [
       { value: "all", label: this.t("panel.filterAll") },
@@ -138,24 +174,111 @@ export class Panel {
       statusChips.appendChild(chip);
     }
 
+    // Sort controls
+    this.sortControls = new PanelSortControls(colors, () => this.renderList(), locale);
+
     filters.appendChild(searchWrap);
     filters.appendChild(chips);
     filters.appendChild(statusChips);
+    filters.appendChild(this.sortControls.element);
 
-    // List
+    // --- List ---
     this.listContainer = el("div", { class: "sp-list" });
     this.listContainer.setAttribute("role", "list");
     this.listContainer.setAttribute("aria-label", this.t("panel.feedbackList"));
 
+    // --- Bulk Actions ---
+    this.bulk = new BulkActions(
+      colors,
+      {
+        onResolve: (ids) => this.bulkResolve(ids),
+        onDelete: (ids) => this.bulkDelete(ids),
+      },
+      locale,
+    );
+    this.bulk.setListContainer(this.listContainer);
+
+    // --- Detail View ---
+    this.detail = new DetailView(
+      colors,
+      {
+        onBack: () => this.detail.hide(),
+        onResolve: async (fb) => {
+          const newResolved = fb.status !== "resolved";
+          await this.client.resolveFeedback(fb.id, newResolved);
+          await this.loadFeedbacks();
+          this.detail.hide();
+        },
+        onDelete: async (fb) => {
+          await this.client.deleteFeedback(fb.id);
+          this.bus.emit("feedback:deleted", fb.id);
+          await this.loadFeedbacks();
+          this.detail.hide();
+        },
+        onGoToAnnotation: (fb) => {
+          if (fb.annotations.length > 0) {
+            const ann = fb.annotations[0];
+            if (!ann) return;
+            window.scrollTo({ left: ann.scrollX, top: ann.scrollY, behavior: "smooth" });
+            this.markers.pinHighlight(fb);
+          }
+        },
+      },
+      locale,
+    );
+
+    // --- Keyboard Shortcuts ---
+    const shortcutsI18n = (locale === "fr" ? SHORTCUTS_I18N_FR : SHORTCUTS_I18N_EN) as typeof SHORTCUTS_I18N_EN;
+    this.shortcuts = new KeyboardShortcuts(
+      colors,
+      {
+        onNavigate: (dir) => {
+          const idx = getFocusedCardIndex(this.listContainer);
+          focusCardByIndex(this.listContainer, dir === "down" ? idx + 1 : idx - 1);
+        },
+        onResolve: () => {
+          const fb = this.getFocusedFeedback();
+          if (fb && !this.pendingMutations.has(fb.id)) {
+            const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${CSS.escape(fb.id)}"]`);
+            const btn = card?.querySelector<HTMLButtonElement>('[data-action="resolve"]');
+            if (btn) this.toggleResolve(fb, btn).catch(() => {});
+          }
+        },
+        onDelete: () => {
+          const fb = this.getFocusedFeedback();
+          if (fb && !this.pendingMutations.has(fb.id)) {
+            const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${CSS.escape(fb.id)}"]`);
+            const btn = card?.querySelector<HTMLButtonElement>('[data-action="delete"]');
+            if (btn) this.deleteFeedback(fb, btn).catch(() => {});
+          }
+        },
+        onFocusSearch: () => this.searchInput.focus(),
+        onToggleSelect: () => {
+          const fb = this.getFocusedFeedback();
+          if (fb) this.bulk.toggle(fb.id);
+        },
+      },
+      shortcutsI18n,
+    );
+
+    // --- Assemble DOM ---
     this.root.appendChild(header);
+    this.root.appendChild(this.stats.element);
     this.root.appendChild(filters);
     this.root.appendChild(this.listContainer);
+    this.root.appendChild(this.bulk.barElement);
+    this.root.appendChild(this.detail.element);
+    this.root.appendChild(this.shortcuts.helpOverlay);
+    this.root.appendChild(this.shortcuts.hintButton);
     shadowRoot.appendChild(this.root);
 
     // --- Event delegation on listContainer ---
 
     this.onListClick = (e: Event) => {
       const target = e.target as Element;
+
+      // Bulk checkbox clicks are handled by BulkActions, skip
+      if (target.closest(".sp-bulk-checkbox")) return;
 
       // Action buttons (expand, resolve, delete)
       const actionEl = target.closest<HTMLElement>("[data-action]");
@@ -186,16 +309,14 @@ export class Panel {
         return;
       }
 
-      // Card click (scroll to annotation)
+      // Card click → open detail view
       const card = target.closest<HTMLElement>(".sp-card");
       if (card) {
         const feedbackId = card.dataset.feedbackId;
         const feedback = this.feedbacks.find((f) => f.id === feedbackId);
-        if (feedback && feedback.annotations.length > 0) {
-          const ann = feedback.annotations[0];
-          if (!ann) return;
-          window.scrollTo({ left: ann.scrollX, top: ann.scrollY, behavior: "smooth" });
-          this.markers.pinHighlight(feedback);
+        if (feedback) {
+          const number = this.feedbacks.indexOf(feedback) + 1;
+          this.detail.show(feedback, number);
         }
       }
     };
@@ -211,11 +332,9 @@ export class Panel {
       ke.preventDefault();
       const feedbackId = card.dataset.feedbackId;
       const feedback = this.feedbacks.find((f) => f.id === feedbackId);
-      if (feedback && feedback.annotations.length > 0) {
-        const ann = feedback.annotations[0];
-        if (!ann) return;
-        window.scrollTo({ left: ann.scrollX, top: ann.scrollY, behavior: "smooth" });
-        this.markers.pinHighlight(feedback);
+      if (feedback) {
+        const number = this.feedbacks.indexOf(feedback) + 1;
+        this.detail.show(feedback, number);
       }
     };
     this.listContainer.addEventListener("keydown", this.onListKeydown);
@@ -247,6 +366,11 @@ export class Panel {
     shadowRoot.addEventListener("keydown", (e) => {
       const ke = e as KeyboardEvent;
       if (ke.key === "Escape" && this.isOpen) {
+        // If detail view is open, close it instead
+        if (this.detail.isVisible) {
+          this.detail.hide();
+          return;
+        }
         this.close();
         return;
       }
@@ -288,6 +412,7 @@ export class Panel {
     this.root.classList.add("sp-panel--open");
     this.root.setAttribute("aria-hidden", "false");
     this.bus.emit("open");
+    this.shortcuts.enable(this.shadowRoot);
     await this.loadFeedbacks();
     // Move focus into the panel (search input or close button)
     requestAnimationFrame(() => {
@@ -305,6 +430,8 @@ export class Panel {
     this.root.classList.remove("sp-panel--open");
     this.root.setAttribute("aria-hidden", "true");
     this.bus.emit("close");
+    this.shortcuts.disable();
+    this.detail.hide();
     // Restore focus to the FAB
     const fab = (this.root.getRootNode() as ShadowRoot).querySelector<HTMLButtonElement>(".sp-fab");
     fab?.focus();
@@ -368,6 +495,8 @@ export class Panel {
       if (signal.aborted) return; // Stale response — a newer request superseded this one
       this.feedbacks = feedbacks;
       this.totalFeedbacks = total;
+      this.stats.update(feedbacks, total);
+      this.bulk.reset();
       this.renderList();
       this.markers.render(feedbacks);
     } catch (error) {
@@ -409,6 +538,7 @@ export class Panel {
       this.currentPage = nextPage;
       this.totalFeedbacks = total;
       this.feedbacks = [...this.feedbacks, ...feedbacks];
+      this.stats.update(this.feedbacks, total);
       this.renderList();
       this.markers.render(this.feedbacks);
     } catch (error) {
@@ -433,12 +563,39 @@ export class Panel {
       return;
     }
 
-    this.feedbacks.forEach((feedback, index) => {
-      const card = this.createCard(feedback, index + 1);
-      // Stagger animation via CSS custom property
-      card.style.setProperty("--sp-card-i", String(index));
-      this.listContainer.appendChild(card);
-    });
+    // Apply sorting
+    const sorted = sortFeedbacks(this.feedbacks, this.sortControls.sortMode);
+
+    // Select all bar
+    const feedbackIds = sorted.map((f) => f.id);
+    const selectAllBar = this.bulk.createSelectAllBar(feedbackIds, this.bulkI18n["bulk.selectAll"]);
+    this.listContainer.appendChild(selectAllBar);
+
+    if (this.sortControls.groupByPage) {
+      // Group by page rendering
+      const groups = groupFeedbacksByPage(sorted);
+      let globalIndex = 0;
+      for (const [pagePath, groupFeedbacks] of groups) {
+        const groupHeader = createPageGroupHeader(pagePath, groupFeedbacks.length, this.colors);
+        this.listContainer.appendChild(groupHeader);
+
+        const groupContent = el("div", { class: "sp-group-content" });
+        for (const feedback of groupFeedbacks) {
+          const card = this.createCard(feedback, globalIndex + 1);
+          card.style.setProperty("--sp-card-i", String(globalIndex));
+          groupContent.appendChild(card);
+          globalIndex++;
+        }
+        this.listContainer.appendChild(groupContent);
+      }
+    } else {
+      // Flat list rendering
+      sorted.forEach((feedback, index) => {
+        const card = this.createCard(feedback, index + 1);
+        card.style.setProperty("--sp-card-i", String(index));
+        this.listContainer.appendChild(card);
+      });
+    }
 
     // "Load more" button when there are remaining feedbacks
     const remaining = this.totalFeedbacks - this.feedbacks.length;
@@ -475,8 +632,12 @@ export class Panel {
     // Body
     const body = el("div", { class: "sp-card-body" });
 
-    // Header: #number + badge + date
+    // Header: checkbox + #number + badge + date
     const header = el("div", { class: "sp-card-header" });
+
+    // Bulk checkbox — inline in the header row
+    const checkbox = this.bulk.createCheckbox(feedback.id);
+    header.appendChild(checkbox);
 
     const num = el("span", { class: "sp-card-number" });
     setText(num, `#${number}`);
@@ -535,9 +696,9 @@ export class Panel {
     deleteBtn.className = "sp-btn-delete";
     deleteBtn.dataset.action = "delete";
     deleteBtn.appendChild(parseSvg(ICON_TRASH));
-    const deleteLabel = document.createElement("span");
-    setText(deleteLabel, ` ${this.t("panel.delete")}`);
-    deleteBtn.appendChild(deleteLabel);
+    const deleteBtnLabel = document.createElement("span");
+    setText(deleteBtnLabel, ` ${this.t("panel.delete")}`);
+    deleteBtn.appendChild(deleteBtnLabel);
 
     footer.appendChild(resolveBtn);
     footer.appendChild(deleteBtn);
@@ -553,20 +714,34 @@ export class Panel {
     return card;
   }
 
-  private async deleteFeedback(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
-    this.pendingMutations.add(feedback.id);
-    const restore = this.setButtonLoading(btn);
+  // ---------------------------------------------------------------------------
+  // Bulk operations
+  // ---------------------------------------------------------------------------
+
+  private async bulkResolve(ids: string[]): Promise<void> {
     try {
-      await this.client.deleteFeedback(feedback.id);
-      this.bus.emit("feedback:deleted", feedback.id);
+      await Promise.all(ids.map((id) => this.client.resolveFeedback(id, true)));
       await this.loadFeedbacks();
     } catch (error) {
-      restore();
       this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      this.pendingMutations.delete(feedback.id);
+      throw error;
     }
   }
+
+  private async bulkDelete(ids: string[]): Promise<void> {
+    try {
+      await Promise.all(ids.map((id) => this.client.deleteFeedback(id)));
+      for (const id of ids) this.bus.emit("feedback:deleted", id);
+      await this.loadFeedbacks();
+    } catch (error) {
+      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Existing methods (preserved)
+  // ---------------------------------------------------------------------------
 
   private async confirmDeleteAll(): Promise<void> {
     const confirmed = await this.showConfirmDialog(
@@ -687,6 +862,21 @@ export class Panel {
     };
   }
 
+  private async deleteFeedback(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
+    this.pendingMutations.add(feedback.id);
+    const restore = this.setButtonLoading(btn);
+    try {
+      await this.client.deleteFeedback(feedback.id);
+      this.bus.emit("feedback:deleted", feedback.id);
+      await this.loadFeedbacks();
+    } catch (error) {
+      restore();
+      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      this.pendingMutations.delete(feedback.id);
+    }
+  }
+
   private async toggleResolve(feedback: FeedbackResponse, btn: HTMLButtonElement): Promise<void> {
     this.pendingMutations.add(feedback.id);
     const restore = this.setButtonLoading(btn);
@@ -732,6 +922,15 @@ export class Panel {
     this.loadFeedbacks().catch(() => {});
   }
 
+  /** Get the focused feedback (for keyboard shortcuts) */
+  private getFocusedFeedback(): FeedbackResponse | undefined {
+    const idx = getFocusedCardIndex(this.listContainer);
+    if (idx < 0) return undefined;
+    const card = this.listContainer.querySelectorAll<HTMLElement>(".sp-card")[idx];
+    if (!card) return undefined;
+    return this.feedbacks.find((f) => f.id === card.dataset.feedbackId);
+  }
+
   scrollToFeedback(feedbackId: string): void {
     const escapedId = CSS.escape(feedbackId);
     const card = this.listContainer.querySelector<HTMLElement>(`[data-feedback-id="${escapedId}"]`);
@@ -763,6 +962,11 @@ export class Panel {
     this.listContainer.removeEventListener("mouseover", this.onListMouseover);
     this.listContainer.removeEventListener("mouseout", this.onListMouseout);
     document.removeEventListener("sp-marker-click", this.onMarkerClick);
+    this.sortControls.destroy();
+    this.bulk.destroy();
+    this.exportBtn.destroy();
+    this.shortcuts.destroy();
+    this.detail.destroy();
     this.root.remove();
   }
 }
