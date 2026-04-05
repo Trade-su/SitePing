@@ -419,16 +419,21 @@ export function createSitepingHandler({
       }
 
       try {
-        // Scope update to the specified project — the store finds by id, but we verify
-        // ownership by checking projectName on the returned record.
+        // Verify project ownership before updating — PrismaStore can do a
+        // lightweight findUnique check; for other store implementations the
+        // projectName in the schema is still validated but the DB-level check
+        // is skipped (the store itself should enforce isolation).
+        if (store instanceof PrismaStore) {
+          const owns = await store.verifyProjectOwnership(parsed.data.id, parsed.data.projectName);
+          if (!owns) {
+            return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
+          }
+        }
+
         const feedback = await store.updateFeedback(parsed.data.id, {
           status: parsed.data.status,
           resolvedAt: parsed.data.status === "resolved" ? new Date() : null,
         });
-
-        if (feedback.projectName !== parsed.data.projectName) {
-          return withCors(Response.json({ error: "Feedback not found" }, { status: 404 }), corsHeaders);
-        }
 
         return withCors(Response.json(feedback), corsHeaders);
       } catch (error) {

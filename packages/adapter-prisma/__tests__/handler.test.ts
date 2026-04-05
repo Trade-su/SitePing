@@ -175,6 +175,7 @@ describe("createSitepingHandler", () => {
 
   describe("PATCH", () => {
     it("resolves a feedback", async () => {
+      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
       prisma.sitepingFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
@@ -194,6 +195,7 @@ describe("createSitepingHandler", () => {
     });
 
     it("unresolves a feedback (clears resolvedAt)", async () => {
+      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "test-project" });
       prisma.sitepingFeedback.update.mockResolvedValue({
         id: "fb-1",
         projectName: "test-project",
@@ -208,6 +210,28 @@ describe("createSitepingHandler", () => {
       await handler.PATCH(req);
       const updateArgs = prisma.sitepingFeedback.update.mock.calls[0][0] as { data: Record<string, unknown> };
       expect(updateArgs.data.resolvedAt).toBeNull();
+    });
+
+    it("returns 404 when feedback belongs to a different project", async () => {
+      prisma.sitepingFeedback.findUnique.mockResolvedValue({ id: "fb-1", projectName: "other-project" });
+      const req = new Request("http://localhost/api/siteping", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "fb-1", projectName: "test-project", status: "resolved" }),
+      });
+      const res = await handler.PATCH(req);
+      expect(res.status).toBe(404);
+      expect(prisma.sitepingFeedback.update).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 when feedback does not exist", async () => {
+      prisma.sitepingFeedback.findUnique.mockResolvedValue(null);
+      const req = new Request("http://localhost/api/siteping", {
+        method: "PATCH",
+        body: JSON.stringify({ id: "nonexistent", projectName: "test-project", status: "resolved" }),
+      });
+      const res = await handler.PATCH(req);
+      expect(res.status).toBe(404);
+      expect(prisma.sitepingFeedback.update).not.toHaveBeenCalled();
     });
 
     it("returns 400 for invalid status", async () => {

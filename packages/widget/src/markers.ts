@@ -1,4 +1,5 @@
 import type { AnchorData, FeedbackResponse, RectData } from "@siteping/core";
+import { Z_INDEX_MAX } from "./constants.js";
 import { resolveAnnotation } from "./dom/resolver.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
@@ -95,7 +96,7 @@ export class MarkerManager {
     private readonly t: TFunction,
   ) {
     this.container = el("div", {
-      style: "position:absolute;top:0;left:0;pointer-events:none;z-index:2147483646;",
+      style: `position:absolute;top:0;left:0;pointer-events:none;z-index:${Z_INDEX_MAX - 1};`,
     });
     this.container.id = "siteping-markers";
     document.body.appendChild(this.container);
@@ -159,6 +160,9 @@ export class MarkerManager {
   }
 
   private repositionAll(): void {
+    // Build set of valid keys to prune stale cache entries afterwards.
+    const validKeys = new Set<string>();
+
     for (const entry of this.entries) {
       for (let i = 0; i < entry.feedback.annotations.length; i++) {
         const markerEl = entry.elements[i];
@@ -167,6 +171,7 @@ export class MarkerManager {
         const annotation = entry.feedback.annotations[i];
         if (!annotation) continue;
         const cacheKey = `${entry.feedback.id}:${i}`;
+        validKeys.add(cacheKey);
 
         // Try cached element first to avoid full resolution chain.
         const cachedRef = this.anchorCache.get(cacheKey);
@@ -206,6 +211,12 @@ export class MarkerManager {
         this.applyConfidenceStyle(markerEl, resolved.confidence, entry.feedback);
       }
     }
+
+    // Prune cache keys from deleted feedbacks to prevent memory leak.
+    for (const key of this.anchorCache.keys()) {
+      if (!validKeys.has(key)) this.anchorCache.delete(key);
+    }
+
     this.applyClusterPositions();
   }
 

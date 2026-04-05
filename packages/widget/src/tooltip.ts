@@ -1,4 +1,5 @@
 import type { FeedbackResponse } from "@siteping/core";
+import { Z_INDEX_MAX } from "./constants.js";
 import { el, formatRelativeDate, setText } from "./dom-utils.js";
 import { createT, getTypeLabel } from "./i18n/index.js";
 import { getTypeBgColor, getTypeColor, type ThemeColors } from "./styles/theme.js";
@@ -24,12 +25,12 @@ export class Tooltip {
 
   constructor(
     private readonly colors: ThemeColors,
-    private readonly locale: string = "fr",
+    private readonly locale: string = "en",
   ) {
     this.root = el("div", {
       style: `
         position: fixed;
-        z-index: 2147483647;
+        z-index: ${Z_INDEX_MAX};
         max-width: 280px;
         padding: 12px 14px;
         border-radius: 14px;

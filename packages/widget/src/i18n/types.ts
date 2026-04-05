@@ -22,6 +22,12 @@ export interface Translations {
   "panel.delete": string;
   "panel.cancel": string;
   "panel.confirmDelete": string;
+  "panel.loadMore": string;
+
+  // Status filter labels
+  "panel.statusAll": string;
+  "panel.statusOpen": string;
+  "panel.statusResolved": string;
 
   // Feedback type labels (UI display only)
   "type.question": string;

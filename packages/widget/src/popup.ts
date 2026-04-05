@@ -1,4 +1,5 @@
 import type { FeedbackType } from "@siteping/core";
+import { Z_INDEX_MAX } from "./constants.js";
 import { el, parseSvg, setText } from "./dom-utils.js";
 import type { TFunction } from "./i18n/index.js";
 import { ICON_BUG, ICON_CHANGE, ICON_OTHER, ICON_QUESTION } from "./icons.js";
@@ -38,7 +39,7 @@ export class Popup {
     this.root = el("div", {
       style: `
         position:fixed;
-        z-index:2147483647;
+        z-index:${Z_INDEX_MAX};
         width:300px;
         padding:16px;
         border-radius:16px;

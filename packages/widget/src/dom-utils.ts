@@ -53,7 +53,7 @@ export function setText(element: HTMLElement | SVGElement, text: string): void {
 }
 
 /** Format a relative date string using Intl.RelativeTimeFormat for locale support */
-export function formatRelativeDate(isoString: string, locale = "fr"): string {
+export function formatRelativeDate(isoString: string, locale = "en"): string {
   const diff = Date.now() - new Date(isoString).getTime();
   const seconds = Math.floor(diff / 1000);
 

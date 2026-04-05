@@ -23,6 +23,12 @@ export const en: Translations = {
   "panel.delete": "Delete",
   "panel.cancel": "Cancel",
   "panel.confirmDelete": "Delete",
+  "panel.loadMore": "Load more ({remaining} remaining)",
+
+  // Status filter labels
+  "panel.statusAll": "All",
+  "panel.statusOpen": "Open",
+  "panel.statusResolved": "Resolved",
 
   // Feedback type labels
   "type.question": "Question",

@@ -62,66 +62,82 @@ async function resilientFetch(url: string, init: RequestInit, retries = MAX_RETR
 // Retry queue — persist failed feedbacks for retry on next page load
 // ---------------------------------------------------------------------------
 
-function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
-  try {
-    const raw = localStorage.getItem(RETRY_QUEUE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> = Array.isArray(parsed)
-      ? (parsed as Array<{ endpoint: string; payload: FeedbackPayload }>)
-      : [];
+type RetryEntry = { endpoint: string; payload: FeedbackPayload };
 
-    // Cap queue size to prevent unbounded localStorage growth
-    if (queue.length >= MAX_QUEUE_SIZE) {
-      queue.shift(); // Drop oldest entry
-    }
+const LOCK_NAME = "siteping_retry_queue";
 
-    queue.push({ endpoint, payload });
-    localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(queue));
-  } catch {
-    // localStorage full or unavailable — silently drop
+/**
+ * Acquire a Web Lock to serialize cross-tab access to the retry queue.
+ * Falls back to running the callback without locking on older browsers.
+ */
+async function withRetryLock<T>(callback: () => T | Promise<T>): Promise<T> {
+  if (typeof navigator !== "undefined" && navigator.locks) {
+    return navigator.locks.request(LOCK_NAME, () => callback());
   }
+  return callback();
+}
+
+function queueForRetry(endpoint: string, payload: FeedbackPayload): void {
+  // Fire-and-forget — we don't want to block the caller on the lock
+  void withRetryLock(() => {
+    try {
+      const raw = localStorage.getItem(RETRY_QUEUE_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      const queue: RetryEntry[] = Array.isArray(parsed) ? (parsed as RetryEntry[]) : [];
+
+      // Cap queue size to prevent unbounded localStorage growth
+      if (queue.length >= MAX_QUEUE_SIZE) {
+        queue.shift(); // Drop oldest entry
+      }
+
+      queue.push({ endpoint, payload });
+      localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(queue));
+    } catch {
+      // localStorage full or unavailable — silently drop
+    }
+  });
 }
 
 export async function flushRetryQueue(endpoint: string): Promise<void> {
-  try {
-    const raw = localStorage.getItem(RETRY_QUEUE_KEY);
-    if (!raw) return;
+  await withRetryLock(async () => {
+    try {
+      const raw = localStorage.getItem(RETRY_QUEUE_KEY);
+      if (!raw) return;
 
-    const parsed: unknown = JSON.parse(raw);
-    const queue: Array<{ endpoint: string; payload: FeedbackPayload }> = Array.isArray(parsed)
-      ? (parsed as Array<{ endpoint: string; payload: FeedbackPayload }>)
-      : [];
+      const parsed: unknown = JSON.parse(raw);
+      const queue: RetryEntry[] = Array.isArray(parsed) ? (parsed as RetryEntry[]) : [];
 
-    const toRetry = queue.filter((e) => e.endpoint === endpoint);
-    if (toRetry.length === 0) return;
+      const toRetry = queue.filter((e) => e.endpoint === endpoint);
+      if (toRetry.length === 0) return;
 
-    // Process items sequentially to avoid overwhelming the server
-    const failed: Array<{ endpoint: string; payload: FeedbackPayload }> = [];
-    for (const entry of toRetry) {
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(entry.payload),
-        });
-        if (!res.ok) {
+      // Process items sequentially to avoid overwhelming the server
+      const failed: RetryEntry[] = [];
+      for (const entry of toRetry) {
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry.payload),
+          });
+          if (!res.ok) {
+            failed.push(entry);
+          }
+        } catch {
           failed.push(entry);
         }
-      } catch {
-        failed.push(entry);
       }
-    }
 
-    // Rebuild queue: keep unrelated entries + failed retries
-    const remaining = queue.filter((e) => e.endpoint !== endpoint).concat(failed);
-    if (remaining.length > 0) {
-      localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(remaining));
-    } else {
-      localStorage.removeItem(RETRY_QUEUE_KEY);
+      // Rebuild queue: keep unrelated entries + failed retries
+      const remaining = queue.filter((e) => e.endpoint !== endpoint).concat(failed);
+      if (remaining.length > 0) {
+        localStorage.setItem(RETRY_QUEUE_KEY, JSON.stringify(remaining));
+      } else {
+        localStorage.removeItem(RETRY_QUEUE_KEY);
+      }
+    } catch {
+      // Ignore — localStorage may be unavailable
     }
-  } catch {
-    // Ignore — localStorage may be unavailable
-  }
+  });
 }
 
 // ---------------------------------------------------------------------------

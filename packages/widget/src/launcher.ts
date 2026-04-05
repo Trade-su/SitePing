@@ -1,6 +1,7 @@
 import type { FeedbackPayload, SitepingConfig, SitepingInstance, SitepingPublicEvents } from "@siteping/core";
 import { Annotator } from "./annotator.js";
 import { ApiClient, flushRetryQueue, type WidgetClient } from "./api-client.js";
+import { MOBILE_BREAKPOINT, PAGE_SIZE, Z_INDEX_MAX } from "./constants.js";
 import { EventBus, type PublicWidgetEvents, type WidgetEvents } from "./events.js";
 import { Fab } from "./fab.js";
 import { createT, type TFunction } from "./i18n/index.js";
@@ -65,10 +66,10 @@ export function launch(config: SitepingConfig): SitepingInstance {
     }
   }
 
-  // Guard: desktop only (< 768px = hidden)
-  if (window.innerWidth < 768) {
+  // Guard: desktop only (< MOBILE_BREAKPOINT = hidden)
+  if (window.innerWidth < MOBILE_BREAKPOINT) {
     const reason = "mobile";
-    console.info("[siteping] Widget not loaded: viewport width < 768px (mobile not supported).");
+    console.info(`[siteping] Widget not loaded: viewport width < ${MOBILE_BREAKPOINT}px (mobile not supported).`);
     config.onSkip?.(reason);
     return skippedInstance();
   }
@@ -123,7 +124,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   // Create host element + Shadow DOM
   const host = document.createElement("siteping-widget");
-  host.style.cssText = "position:fixed;z-index:2147483647;";
+  host.style.cssText = `position:fixed;z-index:${Z_INDEX_MAX};`;
   // Use open mode only for testing — closed in production for CSS isolation.
   // Shadow DOM mode is determined by environment, never by public config.
   let isTestEnv = false;
@@ -238,7 +239,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
 
   // Load markers immediately on page load
   client
-    .getFeedbacks(config.projectName, { limit: 50 })
+    .getFeedbacks(config.projectName, { limit: PAGE_SIZE })
     .then(({ feedbacks }) => {
       markers.render(feedbacks);
     })
@@ -309,7 +310,7 @@ function promptIdentity(shadowRoot: ShadowRoot, t: TFunction): Promise<Identity 
       backdrop-filter:blur(8px);
       -webkit-backdrop-filter:blur(8px);
       display:flex;align-items:center;justify-content:center;
-      z-index:2147483647;
+      z-index:${Z_INDEX_MAX};
       opacity:0;transition:opacity 0.25s ease;
     `;
 

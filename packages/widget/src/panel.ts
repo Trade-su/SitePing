@@ -1,5 +1,6 @@
-import type { FeedbackResponse, FeedbackType } from "@siteping/core";
+import type { FeedbackResponse, FeedbackStatus, FeedbackType } from "@siteping/core";
 import type { WidgetClient } from "./api-client.js";
+import { PAGE_SIZE } from "./constants.js";
 import { el, formatRelativeDate, parseSvg, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
 import { getTypeLabel, type TFunction } from "./i18n/index.js";
@@ -21,7 +22,11 @@ export class Panel {
   private closeBtn: HTMLButtonElement;
   private deleteAllBtn: HTMLButtonElement;
   private activeFilters = new Set<string>(["all"]);
+  private activeStatusFilter: "all" | FeedbackStatus = "all";
   private feedbacks: FeedbackResponse[] = [];
+  private currentPage = 1;
+  private totalFeedbacks = 0;
+  private isLoadingMore = false;
   private isOpen = false;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
   private loadController: AbortController | null = null;
@@ -112,8 +117,30 @@ export class Panel {
       chips.appendChild(chip);
     }
 
+    // Status chips
+    const statusChips = el("div", { class: "sp-chips" });
+    const statusChipOptions: { value: "all" | FeedbackStatus; label: string; color?: string }[] = [
+      { value: "all", label: this.t("panel.statusAll") },
+      { value: "open", label: this.t("panel.statusOpen"), color: "#22c55e" },
+      { value: "resolved", label: this.t("panel.statusResolved"), color: "#9ca3af" },
+    ];
+
+    for (const option of statusChipOptions) {
+      const chip = document.createElement("button");
+      chip.className = `sp-chip ${option.value === "all" ? "sp-chip--active" : ""}`;
+      if (option.color) {
+        chip.style.borderColor = option.color;
+      }
+      setText(chip, option.label);
+      chip.dataset.statusFilter = option.value;
+      chip.setAttribute("aria-pressed", option.value === "all" ? "true" : "false");
+      chip.addEventListener("click", () => this.toggleStatusFilter(option.value, statusChips));
+      statusChips.appendChild(chip);
+    }
+
     filters.appendChild(searchWrap);
     filters.appendChild(chips);
+    filters.appendChild(statusChips);
 
     // List
     this.listContainer = el("div", { class: "sp-list" });
@@ -317,11 +344,19 @@ export class Panel {
     this.loadController = new AbortController();
     const { signal } = this.loadController;
 
+    // Reset to page 1 on fresh load (filter/search change)
+    this.currentPage = 1;
+
     const search = this.searchInput.value.trim() || undefined;
     const typeFilter = this.activeFilters.has("all") ? undefined : (Array.from(this.activeFilters)[0] as FeedbackType);
+    const statusFilter = this.activeStatusFilter === "all" ? undefined : this.activeStatusFilter;
 
-    const options: { limit: number; type?: FeedbackType; search?: string } = { limit: 50 };
+    const options: { page: number; limit: number; type?: FeedbackType; status?: FeedbackStatus; search?: string } = {
+      page: 1,
+      limit: PAGE_SIZE,
+    };
     if (typeFilter) options.type = typeFilter;
+    if (statusFilter) options.status = statusFilter;
     if (search) options.search = search;
 
     // Only show spinner on first load (empty list) — otherwise keep current content visible
@@ -329,15 +364,58 @@ export class Panel {
     if (!hasContent) this.showLoading();
 
     try {
-      const { feedbacks } = await this.client.getFeedbacks(this.projectName, options);
+      const { feedbacks, total } = await this.client.getFeedbacks(this.projectName, options);
       if (signal.aborted) return; // Stale response — a newer request superseded this one
       this.feedbacks = feedbacks;
+      this.totalFeedbacks = total;
       this.renderList();
       this.markers.render(feedbacks);
     } catch (error) {
       if (signal.aborted) return; // Expected abort, not a real error
       if (!hasContent) this.showError();
       this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  private async loadMoreFeedbacks(): Promise<void> {
+    if (this.isLoadingMore) return;
+    this.isLoadingMore = true;
+
+    // Capture current controller — if loadFeedbacks() runs while we're in-flight,
+    // it replaces the controller, signaling that our results are stale.
+    const controller = this.loadController;
+
+    const nextPage = this.currentPage + 1;
+    const search = this.searchInput.value.trim() || undefined;
+    const typeFilter = this.activeFilters.has("all") ? undefined : (Array.from(this.activeFilters)[0] as FeedbackType);
+    const statusFilter = this.activeStatusFilter === "all" ? undefined : this.activeStatusFilter;
+
+    const options: { page: number; limit: number; type?: FeedbackType; status?: FeedbackStatus; search?: string } = {
+      page: nextPage,
+      limit: PAGE_SIZE,
+    };
+    if (typeFilter) options.type = typeFilter;
+    if (statusFilter) options.status = statusFilter;
+    if (search) options.search = search;
+
+    // Show spinner on the "Load more" button
+    const loadMoreBtn = this.listContainer.querySelector<HTMLButtonElement>(".sp-btn-load-more");
+    let restoreBtn: (() => void) | undefined;
+    if (loadMoreBtn) restoreBtn = this.setButtonLoading(loadMoreBtn);
+
+    try {
+      const { feedbacks, total } = await this.client.getFeedbacks(this.projectName, options);
+      if (controller !== this.loadController) return; // Filter/search changed — discard stale page
+      this.currentPage = nextPage;
+      this.totalFeedbacks = total;
+      this.feedbacks = [...this.feedbacks, ...feedbacks];
+      this.renderList();
+      this.markers.render(this.feedbacks);
+    } catch (error) {
+      if (restoreBtn) restoreBtn();
+      this.bus.emit("feedback:error", error instanceof Error ? error : new Error(String(error)));
+    } finally {
+      this.isLoadingMore = false;
     }
   }
 
@@ -361,6 +439,18 @@ export class Panel {
       card.style.setProperty("--sp-card-i", String(index));
       this.listContainer.appendChild(card);
     });
+
+    // "Load more" button when there are remaining feedbacks
+    const remaining = this.totalFeedbacks - this.feedbacks.length;
+    if (remaining > 0) {
+      const loadMoreWrap = el("div", { class: "sp-load-more-wrap" });
+      const loadMoreBtn = document.createElement("button");
+      loadMoreBtn.className = "sp-btn-ghost sp-btn-load-more";
+      setText(loadMoreBtn, this.t("panel.loadMore").replace("{remaining}", String(remaining)));
+      loadMoreBtn.addEventListener("click", () => this.loadMoreFeedbacks().catch(() => {}));
+      loadMoreWrap.appendChild(loadMoreBtn);
+      this.listContainer.appendChild(loadMoreWrap);
+    }
   }
 
   private createCard(feedback: FeedbackResponse, number: number): HTMLElement {
@@ -621,6 +711,20 @@ export class Panel {
     const chips = container.querySelectorAll<HTMLButtonElement>(".sp-chip");
     for (const chip of chips) {
       const isActive = this.activeFilters.has(chip.dataset.filter ?? "");
+      chip.classList.toggle("sp-chip--active", isActive);
+      chip.setAttribute("aria-pressed", String(isActive));
+    }
+
+    this.loadFeedbacks().catch(() => {});
+  }
+
+  private toggleStatusFilter(value: "all" | FeedbackStatus, container: HTMLElement): void {
+    this.activeStatusFilter = value;
+
+    // Update chip styles
+    const chips = container.querySelectorAll<HTMLButtonElement>(".sp-chip");
+    for (const chip of chips) {
+      const isActive = chip.dataset.statusFilter === value;
       chip.classList.toggle("sp-chip--active", isActive);
       chip.setAttribute("aria-pressed", String(isActive));
     }

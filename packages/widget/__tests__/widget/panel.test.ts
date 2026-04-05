@@ -135,7 +135,7 @@ describe("Panel", () => {
 
     it("creates filter chips with correct aria-pressed", () => {
       const chips = shadow.querySelectorAll<HTMLButtonElement>(".sp-chip");
-      expect(chips.length).toBe(5); // all, question, change, bug, other
+      expect(chips.length).toBe(8); // type: all, question, change, bug, other + status: all, open, resolved
 
       // "All" chip is active by default
       const allChip = shadow.querySelector<HTMLButtonElement>('.sp-chip[data-filter="all"]')!;
@@ -188,7 +188,7 @@ describe("Panel", () => {
     it("calls getFeedbacks on open", async () => {
       await panel.open();
 
-      expect(apiClient.getFeedbacks).toHaveBeenCalledWith("test-project", { limit: 50 });
+      expect(apiClient.getFeedbacks).toHaveBeenCalledWith("test-project", { page: 1, limit: 20 });
     });
 
     it("sets aria-hidden=true when closed", async () => {
@@ -297,7 +297,10 @@ describe("Panel", () => {
       allChip.click();
 
       await vi.waitFor(() => {
-        expect(apiClient.getFeedbacks).toHaveBeenCalledWith("test-project", expect.objectContaining({ limit: 50 }));
+        expect(apiClient.getFeedbacks).toHaveBeenCalledWith(
+          "test-project",
+          expect.objectContaining({ page: 1, limit: 20 }),
+        );
       });
     });
   });

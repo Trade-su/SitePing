@@ -61,11 +61,11 @@ describe("formatRelativeDate", () => {
     expect(result).toContain("2025");
   });
 
-  it("defaults to French locale when no locale is provided", () => {
+  it("defaults to English locale when no locale is provided", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2025-06-15T12:00:00Z"));
     const result = formatRelativeDate("2025-06-15T12:00:00Z");
-    expect(result).toMatch(/maintenant/i);
+    expect(result).toMatch(/now/i);
   });
 
   it("respects English locale", () => {

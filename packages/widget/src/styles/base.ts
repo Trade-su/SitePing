@@ -1,3 +1,4 @@
+import { Z_INDEX_MAX } from "../constants.js";
 import { ANIMATION_CSS } from "./animations.js";
 import { cssVariables, type ThemeColors } from "./theme.js";
 
@@ -20,7 +21,7 @@ export function buildStyles(colors: ThemeColors): string {
     :host {
       all: initial;
       position: fixed;
-      z-index: 2147483647;
+      z-index: ${Z_INDEX_MAX};
       font-family: var(--sp-font);
       font-size: 14px;
       line-height: 1.5;
@@ -614,7 +615,7 @@ export function buildStyles(colors: ThemeColors): string {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 2147483647;
+      z-index: ${Z_INDEX_MAX};
       opacity: 0;
       transition: opacity 0.2s ease;
     }
@@ -818,6 +819,20 @@ export function buildStyles(colors: ThemeColors): string {
     .sp-empty-text {
       font-size: 14px;
       font-weight: 500;
+    }
+
+    /* ============================
+       Load More
+       ============================ */
+
+    .sp-load-more-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 12px 0 4px;
+    }
+
+    .sp-btn-load-more {
+      width: 100%;
     }
 
     /* ============================

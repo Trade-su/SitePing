@@ -1,4 +1,5 @@
 import type { AnnotationPayload, FeedbackType } from "@siteping/core";
+import { Z_INDEX_MAX } from "./constants.js";
 import { findAnchorElement, generateAnchor, rectToPercentages } from "./dom/anchor.js";
 import { el, setText } from "./dom-utils.js";
 import type { EventBus, WidgetEvents } from "./events.js";
@@ -59,7 +60,7 @@ export class Annotator {
     this.overlay = el("div", {
       style: `
         position:fixed;inset:0;
-        z-index:2147483646;
+        z-index:${Z_INDEX_MAX - 1};
         background:rgba(15, 23, 42, 0.04);
         cursor:crosshair;
       `,
@@ -70,7 +71,7 @@ export class Annotator {
     this.toolbar = el("div", {
       style: `
         position:fixed;top:0;left:0;right:0;
-        z-index:2147483647;
+        z-index:${Z_INDEX_MAX};
         height:52px;
         background:${this.colors.glassBg};
         backdrop-filter:blur(24px);
