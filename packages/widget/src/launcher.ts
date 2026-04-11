@@ -181,7 +181,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
     if (submitting) return;
     submitting = true;
     try {
-      const { annotation, type, message } = data;
+      const { annotation, type, message, screenshotDataUrl } = data;
 
       // Ensure identity
       let identity = getIdentity();
@@ -220,6 +220,7 @@ export function launch(config: SitepingConfig): SitepingInstance {
         authorEmail: identity.email,
         annotations: [annotation],
         clientId,
+        screenshotDataUrl: screenshotDataUrl ?? null,
       };
 
       try {

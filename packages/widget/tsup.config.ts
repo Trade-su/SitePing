@@ -10,5 +10,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: true,
-  noExternal: ["@medv/finder", "@siteping/core"],
+  noExternal: ["@medv/finder", "@siteping/core", "html2canvas"],
 });

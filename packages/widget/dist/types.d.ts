@@ -72,6 +72,8 @@ export interface FeedbackCreateInput {
     authorEmail: string;
     clientId: string;
     annotations: AnnotationCreateInput[];
+    /** Base64 JPEG data URL of the annotated area. Optional — capture may fail. */
+    screenshotDataUrl?: string | null;
 }
 /** Input for a single annotation when creating a feedback. */
 export interface AnnotationCreateInput {
@@ -221,6 +223,8 @@ export interface FeedbackPayload {
     annotations: AnnotationPayload[];
     /** Client-generated UUID for deduplication */
     clientId: string;
+    /** Base64 JPEG data URL of the annotated area. Optional — capture may fail. */
+    screenshotDataUrl?: string | null;
 }
 /** DOM anchoring data for re-attaching annotations to page elements. */
 export interface AnchorData {

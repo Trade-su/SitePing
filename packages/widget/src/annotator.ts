@@ -11,6 +11,7 @@ export interface AnnotationComplete {
   annotation: AnnotationPayload;
   type: FeedbackType;
   message: string;
+  screenshotDataUrl?: string | null;
 }
 
 /**
@@ -324,6 +325,19 @@ export class Annotator {
 
     // Build annotation payload BEFORE deactivating (needs overlay for elementFromPoint)
     const annotation = this.buildAnnotation(rectBounds);
+
+    // Capture screenshot of the annotated area (best-effort)
+    // Mark overlay elements so html2canvas ignores them
+    this.overlay?.setAttribute("data-siteping-ignore", "true");
+    this.drawingRect?.setAttribute("data-siteping-ignore", "true");
+    let screenshotDataUrl: string | null = null;
+    try {
+      const { captureScreenshot } = await import("./screenshot.js");
+      screenshotDataUrl = await captureScreenshot(rectBounds);
+    } catch {
+      // Screenshot is optional — continue without it
+    }
+
     this.drawingRect?.remove();
     this.drawingRect = null;
     this.deactivate();
@@ -333,6 +347,7 @@ export class Annotator {
       annotation,
       type: result.type,
       message: result.message,
+      screenshotDataUrl,
     });
   };
 

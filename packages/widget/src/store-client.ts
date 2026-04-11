@@ -37,6 +37,7 @@ export class StoreClient implements WidgetClient {
       authorEmail: payload.authorEmail,
       clientId: payload.clientId,
       annotations: payload.annotations.map(flattenAnnotation),
+      screenshotDataUrl: payload.screenshotDataUrl ?? null,
     });
 
     return toResponse(record);
