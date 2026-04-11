@@ -67,20 +67,20 @@ export class Annotator {
     });
     this.overlay.setAttribute("aria-hidden", "true");
 
-    // Toolbar — glassmorphism bar
+    // Toolbar — glassmorphism bar (bottom to avoid overlapping app headers)
     this.toolbar = el("div", {
       style: `
-        position:fixed;top:0;left:0;right:0;
+        position:fixed;bottom:0;left:0;right:0;
         z-index:${Z_INDEX_MAX};
         height:52px;
         background:${this.colors.glassBg};
         backdrop-filter:blur(24px);
         -webkit-backdrop-filter:blur(24px);
-        border-bottom:1px solid ${this.colors.glassBorder};
+        border-top:1px solid ${this.colors.glassBorder};
         display:flex;align-items:center;justify-content:center;gap:16px;
         font-family:"Inter",system-ui,-apple-system,sans-serif;
         font-size:14px;color:${this.colors.text};
-        box-shadow:0 4px 16px ${this.colors.shadow};
+        box-shadow:0 -4px 16px ${this.colors.shadow};
         -webkit-font-smoothing:antialiased;
       `,
     });

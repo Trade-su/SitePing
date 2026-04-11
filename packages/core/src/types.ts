@@ -21,7 +21,7 @@ export interface SitepingConfig {
   /** Color theme — defaults to 'light' */
   theme?: "light" | "dark" | "auto";
   /** UI locale — defaults to 'en' */
-  locale?: "fr" | "en" | (string & {}) | undefined;
+  locale?: "fr" | "en" | "ru" | (string & {}) | undefined;
   /** Called when the widget is skipped (production mode, mobile viewport) */
   onSkip?: (reason: "production" | "mobile") => void;
 
