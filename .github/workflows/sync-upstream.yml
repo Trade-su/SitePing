@@ -1,0 +1,77 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday at 9:00 UTC
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/AurelienMusic/SitePing.git
+
+      - name: Fetch upstream
+        run: git fetch upstream main
+
+      - name: Check for new commits
+        id: check
+        run: |
+          BEHIND=$(git rev-list --count HEAD..upstream/main)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          if [ "$BEHIND" -eq 0 ]; then
+            echo "Fork is up to date with upstream"
+          else
+            echo "Fork is $BEHIND commits behind upstream"
+          fi
+
+      - name: Create sync PR
+        if: steps.check.outputs.behind != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="sync/upstream-$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git merge upstream/main --no-edit || true
+
+          # Check if there are conflicts
+          if git diff --name-only --diff-filter=U | grep -q .; then
+            git merge --abort
+            gh issue create \
+              --title "⚠️ Upstream sync has conflicts ($(date +%Y-%m-%d))" \
+              --body "Automatic merge from \`upstream/main\` has conflicts. Manual resolution needed.
+
+          **Commits behind:** ${{ steps.check.outputs.behind }}
+
+          To resolve:
+          \`\`\`bash
+          git fetch upstream main
+          git checkout -b sync/manual upstream/main
+          git merge origin/main
+          # resolve conflicts
+          git push origin sync/manual
+          \`\`\`"
+          else
+            git push origin "$BRANCH"
+            gh pr create \
+              --title "⬆️ Sync upstream (${{ steps.check.outputs.behind }} commits)" \
+              --body "Automatic sync from [upstream/main](https://github.com/AurelienMusic/SitePing).
+
+          **Commits behind:** ${{ steps.check.outputs.behind }}
+
+          After merging:
+          1. Build: \`bun install && bun run build\`
+          2. Pack: \`cd packages/widget && npm pack\`
+          3. Copy tarball to \`tradesu-moderator/frontend/vendor/\`
+          4. Update \`frontend/package.json\` version reference
+          5. Test locally, commit, deploy" \
+              --base main \
+              --head "$BRANCH"
+          fi
