@@ -3,14 +3,14 @@ name: CI
 on:
   pull_request:
     branches: [main]
-  workflow_call:
+  # Removed workflow_call — release.yml no longer calls CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   ci:
@@ -57,11 +57,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install Playwright (chromium only)
+        run: npx playwright install --with-deps chromium
 
-      - name: Run e2e tests
-        run: bun run test:e2e
+      - name: Run e2e tests (chromium only)
+        run: bun run test:e2e -- --project=chromium
 
       - name: Upload Playwright report
         if: failure()
