@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add upstream remote
-        run: git remote add upstream https://github.com/AurelienMusic/SitePing.git
+        run: git remote add upstream https://github.com/NeosiaNexus/SitePing.git
 
       - name: Fetch upstream
         run: git fetch upstream main
@@ -62,7 +62,7 @@ jobs:
             git push origin "$BRANCH"
             gh pr create \
               --title "⬆️ Sync upstream (${{ steps.check.outputs.behind }} commits)" \
-              --body "Automatic sync from [upstream/main](https://github.com/AurelienMusic/SitePing).
+              --body "Automatic sync from [upstream/main](https://github.com/NeosiaNexus/SitePing).
 
           **Commits behind:** ${{ steps.check.outputs.behind }}
 
