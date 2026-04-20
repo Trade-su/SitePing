@@ -144,8 +144,8 @@ describe("Popup", () => {
       popup.show(makeBounds({ top: 500, bottom: 600 }));
 
       const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
-      // Should flip up: top = rectTop - 220 - 8 = 500 - 228 = 272
-      expect(dialog.style.top).toBe("272px");
+      // Should flip up: top = rectTop - popupH - 8 = 500 - 260 - 8 = 232
+      expect(dialog.style.top).toBe("232px");
     });
 
     it("resolves to null when cancelled (via cancel button)", async () => {
